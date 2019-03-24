@@ -1,0 +1,78 @@
+﻿<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CleanProg>
+  <!-- Version of this file -->
+  <FileVersion Value="10"/>
+  <!-- Basic settings -->
+  <!-- Mode to parse program names 0 = Ein Datensatz, 1 = mehrere Datensätze -->
+  <ProgNameMode Value="0"/>
+    <!-- Maximum available number of programs -->
+  <NumberOfPrograms Value="20"/>
+  <!-- Number of export files of cleaning program -->
+  <NumberOfFiles Value="8"/>
+  <!-- Number of languages of cleaning program -->
+  <NumberOfLanguages Value="3"/>
+  <!-- Number steps of cleaning program -->
+  <NumberOfSteps Value="128"/>
+  <!-- Number of outputs of cleaning program -->
+  <NumberOfOutputs Value="48"/>
+  <!-- Number of inputs of cleaning program -->
+  <NumberOfInputs Value="32"/>
+  <!-- Number of output intervalls of cleaning program -->
+  <NumberOfIntervalls Value="2"/>
+  <!-- Number of analog inputs of cleaning program -->
+  <NumberOfAnalogInputs Value="8"/>
+  <!-- Number of outputs of cleaning program -->
+  <NumberOfAnalogOutputs Value="8"/>
+
+  <!-- Variable names in the export files -->
+  <!-- Program name: CleanProgName1 -->
+  <ProgramName Value="CleanProgName%d"/>
+  <!-- Step name: CleanStep_Language1_Name0 -->
+  <StepName Value="CleanStep_Language%d_Name%d"/>
+  <!-- Step output: Cleaning_Step.udt_cleaning.aby_output1_mode[0] -->
+  <OutputMode Value="Cleaning_Step.udt_cleaning.aby_output%d_mode[%d]"/>
+  <!-- Step input compare value: Cleaning_Step.udt_cleaning.aby_input1[0] -->
+  <InputMode Value="Cleaning_Step.udt_cleaning.aby_input%d[%d]"/>
+  <!-- Step input active: Cleaning_Step.udt_cleaning.aby_input1_aktiv[0] -->
+  <InputActive Value="Cleaning_Step.udt_cleaning.aby_input%d_aktiv[%d]"/>
+  <!-- Alarm step: Cleaning_Step.udt_cleaning.ai_alarm_step[0] -->
+  <AlarmStep Value="Cleaning_Step.udt_cleaning.ai_alarm_step[%d]"/>
+  <!-- Alarm condition: Cleaning_Step.udt_cleaning.ai_condition_alarm[0] -->
+  <AlarmCondition Value="Cleaning_Step.udt_cleaning.ai_condition_alarm[%d]"/>
+  <!-- Next step: Cleaning_Step.udt_cleaning.ai_condition_next_step[0] -->
+  <NextCondition Value="Cleaning_Step.udt_cleaning.ai_condition_next_step[%d]"/>
+  <!-- Step timeout: Cleaning_Step.udt_cleaning.ai_control_time[0] -->
+  <ControlTime Value="Cleaning_Step.udt_cleaning.ai_control_time[%d]"/>
+  <!-- Output intervall duration: Cleaning_Step.udt_cleaning.ai_intervall_1[0] -->
+  <Intervall Value="Cleaning_Step.udt_cleaning.ai_intervall_%d[%d]"/>
+  <!-- Configured number of loops: Cleaning_Step.udt_cleaning.ai_loops[0] -->
+  <Loops Value="Cleaning_Step.udt_cleaning.ai_loops[%d]"/>
+  <!-- Next step: Cleaning_Step.udt_cleaning.ai_next_step[0] -->
+  <NextStep Value="Cleaning_Step.udt_cleaning.ai_next_step[%d]"/>
+  <!-- Message number: Cleaning_Step.udt_cleaning.ai_message[0] -->
+  <Messages Value="Cleaning_Step.udt_cleaning.ai_message[%d]"/>
+  <!-- Output intervall pause: Cleaning_Step.udt_cleaning.ai_pause_1[0] -->
+  <Pause Value="Cleaning_Step.udt_cleaning.ai_pause_%d[%d]"/>
+  <!-- Step duration: Cleaning_Step.udt_cleaning.ai_step_time[0] -->
+  <StepTime Value="Cleaning_Step.udt_cleaning.ai_step_time[%d]"/>
+  <!-- Analog input compare value: Cleaning_Step.udt_cleaning.ar_analog_in_1[0] -->
+  <AnalogIn Value="Cleaning_Step.udt_cleaning.ar_analog_in_%d[%d]"/>
+  <!-- Analog output value: Cleaning_Step.udt_cleaning.ar_analog_out_1[0] -->
+  <AnalogOut Value="Cleaning_Step.udt_cleaning.ar_analog_out_%d[%d]"/>
+  <!-- Analog input mode: Cleaning_Step.udt_cleaning.ar_mode_ai_1[0] -->
+  <AnalogMode Value="Cleaning_Step.udt_cleaning.ar_mode_ai_%d[%d]"/>
+
+  <!-- Textlist names -->
+  <!-- Displayed messages list -->
+  <MessageListName Value="c_Meldeausgabe"/>
+  <!-- Input names list -->
+  <InputListName Value="Clean_Input"/>
+  <!-- Output names list -->
+  <OutputListName Value="Clean_Output"/>
+  <!-- Analog input names list -->
+  <AnalogInputListName Value="Clean_Analog_Input"/>
+  <!-- Analog output names list -->
+  <AnalogOutputListName Value="Clean_Analog_Output"/>
+  <!-- Analog output units list -->
+  <AnalogOutputUnitListName Value="Clean_Analog_Output_Unit"/>
+</CleanProg>

@@ -1,0 +1,144 @@
+﻿	<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+		<PropertyGroup>
+			<ProjectGuid>{6B5EF758-B991-42D7-80D0-144F9C1D3B4B}</ProjectGuid>
+			<MainSource>CleanProgHelper.dpr</MainSource>
+			<Basis>True</Basis>
+			<Config Condition="'$(Config)'==''">Release</Config>
+			<Platform>Win32</Platform>
+			<AppType>Application</AppType>
+			<FrameworkType>VCL</FrameworkType>
+			<DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
+			<ProjectVersion>12.2</ProjectVersion>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Config)'=='Basis' or '$(Base)'!=''">
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Config)'=='Release' or '$(Cfg_1)'!=''">
+			<Cfg_1>true</Cfg_1>
+			<CfgParent>Base</CfgParent>
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Config)'=='Debug' or '$(Cfg_2)'!=''">
+			<Cfg_2>true</Cfg_2>
+			<CfgParent>Base</CfgParent>
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Base)'!=''">
+			<DCC_SYMBOL_PLATFORM>false</DCC_SYMBOL_PLATFORM>
+			<ImageDebugInfo>true</ImageDebugInfo>
+			<DCC_UnitSearchPath>C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\Jedi\jcl\source;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\Jedi\jvcl\resources;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\vst\Source;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\Jedi\jcl\source\include;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\pas;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\Jedi\jvcl\run;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\Jedi\jvcl\common;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\TShutDownKomponente\D10;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\DEC_5_2\Part_I;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\csProgressBarEx;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\TScrollingCredits;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\Jedi\jcl\source\common;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\Jedi\jcl\source\windows;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\FastMM4;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\TUbuntuProgress;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\TShutDownKomponente\D15;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_ImageBase>00400000</DCC_ImageBase>
+			<DCC_MapFile>3</DCC_MapFile>
+			<DCC_RemoteDebug>true</DCC_RemoteDebug>
+			<DCC_UnitAlias>WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;$(DCC_UnitAlias)</DCC_UnitAlias>
+			<DCC_RangeChecking>true</DCC_RangeChecking>
+			<DCC_UsePackage>rtl;vclx;vcl;dbrtl;vcldb;adortl;dbxcds;dbexpress;vclib;ibxpress;vclactnband;xmlrtl;inet;IntrawebDB_80_100;Intraweb_80_100;vclie;inetdbbde;inetdbxpress;IndyCore;IndySystem;dclOfficeXP;VclSmp;soaprtl;dsnap;IndyProtocols;bdertl;teeui;teedb;tee;vcldbx;madBasic_;madDisAsm_;madExcept_;fs10;frx10;fsDB10;frxDB10;fsBDE10;frxBDE10;fsADO10;frxADO10;fsIBX10;frxIBX10;frxDBX10;frxe10;fsTee10;frxTee10;JclDeveloperTools;Jcl;JclVcl;JclContainers;JvCore;JvSystem;JvStdCtrls;JvControls;JvCmp;JvCustom;JvDlgs;JvCrypt;JvMM;JvNet;JvAppFrm;JvDB;JvBDE;JvPascalInterpreter;JvBands;JvPluginSystem;JvJans;JvGlobus;JvPrintPreview;JvPageComps;JvWizards;JvTimeFramework;JvHMI;JvManagedThreads;JvXPCtrls;JvDocking;JvDotNetCtrls;JvRuntimeDesign;CoolTrayIcon_D10;ProgressbarEx;FreeRep10;ScrollingCredits;ShutDownPack;UbuntuProgressPackage;CNAExpert100</DCC_UsePackage>
+			<DCC_K>false</DCC_K>
+			<DCC_N>true</DCC_N>
+			<DCC_S>false</DCC_S>
+			<DCC_F>false</DCC_F>
+			<DCC_DebugInfoInExe>true</DCC_DebugInfoInExe>
+			<DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
+			<DCC_E>false</DCC_E>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Cfg_1)'!=''">
+			<DCC_DebugInfoInExe>false</DCC_DebugInfoInExe>
+			<DCC_Optimize>true</DCC_Optimize>
+			<DCC_RemoteDebug>false</DCC_RemoteDebug>
+			<DCC_ImportedDataReferences>false</DCC_ImportedDataReferences>
+			<DCC_AssertionsAtRuntime>false</DCC_AssertionsAtRuntime>
+			<DCC_Define>RELEASE;madExcept;$(DCC_Define)</DCC_Define>
+			<DCC_SymbolReferenceInfo>0</DCC_SymbolReferenceInfo>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Cfg_2)'!=''">
+			<DCC_Define>Debug;madExcept;$(DCC_Define)</DCC_Define>
+			<DCC_DebugDCUs>true</DCC_DebugDCUs>
+			<DCC_SymbolReferenceInfo>2</DCC_SymbolReferenceInfo>
+			<DCC_GenerateStackFrames>true</DCC_GenerateStackFrames>
+		</PropertyGroup>
+		<ItemGroup>
+			<DelphiCompile Include="CleanProgHelper.dpr">
+				<MainSource>MainSource</MainSource>
+			</DelphiCompile>
+			<DCCReference Include="fMain.pas">
+				<Form>MainForm</Form>
+			</DCCReference>
+			<DCCReference Include="csCSV.pas"/>
+			<DCCReference Include="uCleanProgParser.pas"/>
+			<DCCReference Include="VTreeHelper.pas"/>
+			<DCCReference Include="VPropertyTreeEditors.pas"/>
+			<DCCReference Include="uVisio.pas"/>
+			<DCCReference Include="fSelectTarget.pas">
+				<Form>SelectTarget</Form>
+			</DCCReference>
+			<DCCReference Include="fEditMessages.pas">
+				<Form>EditMessages</Form>
+			</DCCReference>
+			<DCCReference Include="fSelectLangIndex.pas">
+				<Form>SelectLangIndex</Form>
+			</DCCReference>
+			<DCCReference Include="fAbout.pas">
+				<Form>AboutBox</Form>
+			</DCCReference>
+			<DCCReference Include="uParser.pas"/>
+			<BuildConfiguration Include="Debug">
+				<Key>Cfg_2</Key>
+				<CfgParent>Base</CfgParent>
+			</BuildConfiguration>
+			<BuildConfiguration Include="Basis">
+				<Key>Base</Key>
+			</BuildConfiguration>
+			<BuildConfiguration Include="Release">
+				<Key>Cfg_1</Key>
+				<CfgParent>Base</CfgParent>
+			</BuildConfiguration>
+		</ItemGroup>
+		<Import Condition="Exists('$(BDS)\Bin\CodeGear.Delphi.Targets')" Project="$(BDS)\Bin\CodeGear.Delphi.Targets"/>
+		<Import Condition="Exists('$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\8.0\UserTools.proj')" Project="$(APPDATA)\Embarcadero\$(BDSAPPDATABASEDIR)\8.0\UserTools.proj"/>
+		<ProjectExtensions>
+			<Borland.Personality>Delphi.Personality.12</Borland.Personality>
+			<Borland.ProjectType/>
+			<BorlandProject>
+				<Delphi.Personality>
+					<Source>
+						<Source Name="MainSource">CleanProgHelper.dpr</Source>
+					</Source>
+					<VersionInfo>
+						<VersionInfo Name="IncludeVerInfo">True</VersionInfo>
+						<VersionInfo Name="AutoIncBuild">True</VersionInfo>
+						<VersionInfo Name="MajorVer">1</VersionInfo>
+						<VersionInfo Name="MinorVer">7</VersionInfo>
+						<VersionInfo Name="Release">17</VersionInfo>
+						<VersionInfo Name="Build">417</VersionInfo>
+						<VersionInfo Name="Debug">False</VersionInfo>
+						<VersionInfo Name="PreRelease">False</VersionInfo>
+						<VersionInfo Name="Special">False</VersionInfo>
+						<VersionInfo Name="Private">False</VersionInfo>
+						<VersionInfo Name="DLL">False</VersionInfo>
+						<VersionInfo Name="Locale">1031</VersionInfo>
+						<VersionInfo Name="CodePage">1252</VersionInfo>
+					</VersionInfo>
+					<VersionInfoKeys>
+						<VersionInfoKeys Name="CompanyName"/>
+						<VersionInfoKeys Name="FileDescription"/>
+						<VersionInfoKeys Name="FileVersion">1.7.17.417</VersionInfoKeys>
+						<VersionInfoKeys Name="InternalName"/>
+						<VersionInfoKeys Name="LegalCopyright">C.Schoch</VersionInfoKeys>
+						<VersionInfoKeys Name="LegalTrademarks"/>
+						<VersionInfoKeys Name="OriginalFilename"/>
+						<VersionInfoKeys Name="ProductName"/>
+						<VersionInfoKeys Name="ProductVersion">1.7.0.0</VersionInfoKeys>
+						<VersionInfoKeys Name="Comments"/>
+					</VersionInfoKeys>
+					<Excluded_Packages>
+						<Excluded_Packages Name="$(BDSBIN)\dcloffice2k150.bpl">Microsoft Office 2000 Beispiele für gekapselte Komponenten für Automation Server</Excluded_Packages>
+						<Excluded_Packages Name="$(BDSBIN)\dclofficexp150.bpl">Microsoft Office XP Beispiele für gekapselte Komponenten für Automation Server</Excluded_Packages>
+					</Excluded_Packages>
+				</Delphi.Personality>
+				<Platforms>
+					<Platform value="Win32">True</Platform>
+				</Platforms>
+			</BorlandProject>
+			<ProjectFileVersion>12</ProjectFileVersion>
+		</ProjectExtensions>
+	</Project>
