@@ -40,7 +40,7 @@ begin
   Creatingsto.Credits.Add('&b&uReinigungseditor ' + GetVersion);
   Creatingsto.Credits.Add('');
   Creatingsto.Credits.Add('');
-  Creatingsto.Credits.Add('Copyright © 2010 - 2019 C.Schoch');
+  Creatingsto.Credits.Add('Copyright © 2010 - 2020 C.Schoch');
   Creatingsto.Visible := true;
   // Creatingsto.Animate := true;
 end;

@@ -1401,7 +1401,7 @@ var
 
   function GetString(s : string) : string;
   begin
-    if s[1] = '"' then
+    if (s <> '') and (s[1] = '"') then
     begin
       Result := Copy(s, 2, Length(s) - 2);
     end;
@@ -1511,7 +1511,7 @@ begin
               // for j := 0 to NUM_OF_LANGS - 1 do    #
               for j := 0 to Divider.Count - 1 - 4 do
               begin
-                k := StrToInt(GetString(aTemp[3]));
+                k := StrToIntDef(GetString(aTemp[3]), 0);
                 if k < Settings.NumOfInputs then
                 begin
                   FDescription[aIndex[j]].Input[k] := aText[j];
@@ -1556,7 +1556,7 @@ begin
               // for j := 0 to NUM_OF_LANGS - 1 do
               for j := 0 to Divider.Count - 1 - 4 do
               begin
-                k := StrToInt(GetString(aTemp[3]));
+                k := StrToIntDef(GetString(aTemp[3]), 0);
                 if k < Settings.NumOfOutputs then
                 begin
                   FDescription[aIndex[j]].Output[k] := aText[j];
@@ -1601,7 +1601,7 @@ begin
               // for j := 0 to NUM_OF_LANGS - 1 do
               for j := 0 to Divider.Count - 1 - 4 do
               begin
-                k := StrToInt(GetString(aTemp[3]));
+                k := StrToIntDef(GetString(aTemp[3]), 0);
                 if k < Settings.NumOfAnalogIn then
                 begin
                   FDescription[aIndex[j]].AnalogIn[k] := aText[j];
@@ -1646,7 +1646,7 @@ begin
               // for j := 0 to NUM_OF_LANGS - 1 do
               for j := 0 to Divider.Count - 1 - 4 do
               begin
-                k := StrToInt(GetString(aTemp[3]));
+                k := StrToIntDef(GetString(aTemp[3]), 0);
                 if k < Settings.NumOfAnalogOut then
                 begin
                   FDescription[aIndex[j]].AnalogOut[k] := aText[j];
@@ -1691,7 +1691,7 @@ begin
               // for j := 0 to NUM_OF_LANGS - 1 do
               for j := 0 to Divider.Count - 1 - 4 do
               begin
-                k := StrToInt(GetString(aTemp[3]));
+                k := StrToIntDef(GetString(aTemp[3]), 0);
                 if k < Settings.NumOfAnalogOut then
                 begin
                   FDescription[aIndex[j]].AnalogOutUnit[k] := aText[j];
@@ -1959,7 +1959,7 @@ begin
     end;
     for RawValue in Data.Data do
     begin
-      FProgram[RawValue.FormatIndex].Step[i].AlarmCond.Value := StrToInt(RawValue.Value);
+      FProgram[RawValue.FormatIndex].Step[i].AlarmCond.Value := StrToIntDef(RawValue.Value, 0);
       FProgram[RawValue.FormatIndex].Step[i].AlarmCond.EntryFolder := Data.Folder;
       FProgram[RawValue.FormatIndex].ModeFile := Data.FileIndex;
       Inc(FCount);
@@ -1984,7 +1984,7 @@ begin
     end;
     for RawValue in Data.Data do
     begin
-      FProgram[RawValue.FormatIndex].Step[i].AlarmStep.Value := StrToInt(RawValue.Value);
+      FProgram[RawValue.FormatIndex].Step[i].AlarmStep.Value := StrToIntDef(RawValue.Value, 0);
       FProgram[RawValue.FormatIndex].Step[i].AlarmStep.EntryFolder := Data.Folder;
       FProgram[RawValue.FormatIndex].ModeFile := Data.FileIndex;
       Inc(FCount);
@@ -2093,7 +2093,7 @@ begin
     end;
     for RawValue in Data.Data do
     begin
-      FProgram[RawValue.FormatIndex].Step[i].ContrTime.Value := StrToInt(RawValue.Value);
+      FProgram[RawValue.FormatIndex].Step[i].ContrTime.Value := StrToIntDef(RawValue.Value, 0);
       FProgram[RawValue.FormatIndex].Step[i].ContrTime.EntryFolder := Data.Folder;
       FProgram[RawValue.FormatIndex].ModeFile := Data.FileIndex;
       Inc(FCount);
@@ -2176,7 +2176,7 @@ begin
       end;
       for RawValue in Data.Data do
       begin
-        FProgram[RawValue.FormatIndex].Step[k].INTERVALL[i].INTERVALL.Value := StrToInt(RawValue.Value);
+        FProgram[RawValue.FormatIndex].Step[k].INTERVALL[i].INTERVALL.Value := StrToIntDef(RawValue.Value, 0);
         FProgram[RawValue.FormatIndex].Step[k].INTERVALL[i].INTERVALL.EntryFolder := Data.Folder;
         FProgram[RawValue.FormatIndex].IntervallFile := Data.FileIndex;
         Inc(FCount);
@@ -2202,7 +2202,7 @@ begin
     end;
     for RawValue in Data.Data do
     begin
-      FProgram[RawValue.FormatIndex].Step[i].LOOPS.Value := StrToInt(RawValue.Value);
+      FProgram[RawValue.FormatIndex].Step[i].LOOPS.Value := StrToIntDef(RawValue.Value, 0);
       FProgram[RawValue.FormatIndex].Step[i].LOOPS.EntryFolder := Data.Folder;
       FProgram[RawValue.FormatIndex].ModeFile := Data.FileIndex;
       Inc(FCount);
@@ -2227,7 +2227,7 @@ begin
     end;
     for RawValue in Data.Data do
     begin
-      FProgram[RawValue.FormatIndex].Step[i].Message.Value := StrToInt(RawValue.Value);
+      FProgram[RawValue.FormatIndex].Step[i].Message.Value := StrToIntDef(RawValue.Value, 0);
       FProgram[RawValue.FormatIndex].Step[i].Message.EntryFolder := Data.Folder;
       FProgram[RawValue.FormatIndex].ModeFile := Data.FileIndex;
       Inc(FCount);
@@ -2252,7 +2252,7 @@ begin
     end;
     for RawValue in Data.Data do
     begin
-      FProgram[RawValue.FormatIndex].Step[i].NextCond.Value := StrToInt(RawValue.Value);
+      FProgram[RawValue.FormatIndex].Step[i].NextCond.Value := StrToIntDef(RawValue.Value, 0);
       FProgram[RawValue.FormatIndex].Step[i].NextCond.EntryFolder := Data.Folder;
       FProgram[RawValue.FormatIndex].ModeFile := Data.FileIndex;
       Inc(FCount);
@@ -2277,7 +2277,7 @@ begin
     end;
     for RawValue in Data.Data do
     begin
-      FProgram[RawValue.FormatIndex].Step[i].NextStep.Value := StrToInt(RawValue.Value);
+      FProgram[RawValue.FormatIndex].Step[i].NextStep.Value := StrToIntDef(RawValue.Value, 0);
       FProgram[RawValue.FormatIndex].Step[i].NextStep.EntryFolder := Data.Folder;
       FProgram[RawValue.FormatIndex].ModeFile := Data.FileIndex;
       Inc(FCount);
@@ -2304,7 +2304,7 @@ begin
       end;
       for RawValue in Data.Data do
       begin
-        FProgram[RawValue.FormatIndex].Step[k].OutputMode[i].Value := StrToInt(RawValue.Value);
+        FProgram[RawValue.FormatIndex].Step[k].OutputMode[i].Value := StrToIntDef(RawValue.Value, 0);
         FProgram[RawValue.FormatIndex].Step[k].OutputMode[i].EntryFolder := Data.Folder;
         FProgram[RawValue.FormatIndex].OutputModeFile := Data.FileIndex;
         Inc(FCount);
@@ -2332,7 +2332,7 @@ begin
       end;
       for RawValue in Data.Data do
       begin
-        FProgram[RawValue.FormatIndex].Step[k].INTERVALL[i].PAUSE.Value := StrToInt(RawValue.Value);
+        FProgram[RawValue.FormatIndex].Step[k].INTERVALL[i].PAUSE.Value := StrToIntDef(RawValue.Value, 0);
         FProgram[RawValue.FormatIndex].Step[k].INTERVALL[i].PAUSE.EntryFolder := Data.Folder;
         FProgram[RawValue.FormatIndex].IntervallFile := Data.FileIndex;
         Inc(FCount);
@@ -2415,7 +2415,7 @@ begin
     end;
     for RawValue in Data.Data do
     begin
-      FProgram[RawValue.FormatIndex].Step[i].Time.Value := StrToInt(RawValue.Value);
+      FProgram[RawValue.FormatIndex].Step[i].Time.Value := StrToIntDef(RawValue.Value, 0);
       FProgram[RawValue.FormatIndex].Step[i].Time.EntryFolder := Data.Folder;
       FProgram[RawValue.FormatIndex].ModeFile := Data.FileIndex;
       Inc(FCount);
