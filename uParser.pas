@@ -12,7 +12,6 @@ uses
   himXML,
   Graphics,
   Generics.Collections,
-  CodeSiteLogging,
   uCleanProgParser;
 
 const
@@ -159,8 +158,7 @@ uses
   Windows,
   Math,
   csExplode,
-  csUtils,
-  ShlObj;
+  csUtils;
 
 { TParser }
 
@@ -257,7 +255,7 @@ begin
             end;
           end;
           FolderIndex := FEntryFolders.Add(ExtractFilePath(csvReader.Columns[0]));
-          //Data := TData.Create(s, FileIndex, FolderIndex);
+          // Data := TData.Create(s, FileIndex, FolderIndex);
           FLines.Add(ExtractFileName(csvReader.Columns[0]), Data);
         end;
       end;

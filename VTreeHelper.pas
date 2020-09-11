@@ -8,35 +8,43 @@ uses
   VirtualTrees,
   Classes,
   Types,
-  uCleanProgParser,
+  uCleanProg,
+  uCleanProg.Settings,
   Generics.Collections,
   SysUtils;
 
 const
-  Mode : array [0 .. 5] of string = ('Inakiv', 'Aktiv', 'Intervall 1', 'Inverse Intervall 1', 'Intervall 2',
+  OutputMode : array [0 .. 5] of string = ('Inaktiv', 'Aktiv', 'Intervall 1', 'Inverse Intervall 1', 'Intervall 2',
     'Inverse Intervall 2');
   AnalogInMode : array [0 .. 2] of string = ('Inaktiv', '<', '>');
-  // ModeShort : array [0 .. 5] of string = ('I', 'A', 'I 1', 'Inv I 1', 'I 2', 'Inv I 2');
-  // InputMode: array [Boolean] of string = ('0', '1');
-  InputMode : array [Boolean] of string = ('Aktiv/Aus', 'Aktiv/Ein');
-  ModeShort : array [0 .. 5] of string = ('Inakiv', 'Aktiv', 'Intervall 1', 'Inverse Intervall 1', 'Intervall 2',
-    'Inverse Intervall 2');
+  InputAktiv: array [Boolean] of string = ('Inaktiv', 'Aktiv');
+  InputMode : array [Boolean] of string = ('Aus', 'Ein');
 
 type
   PInputData = ^TInputData;
 
-  TInputData = record
-    Name : string;
+  TInputDataState = record
     Mode : Boolean;
     Aktiv : Boolean;
   end;
 
+  TInputData = record
+    Name : string;
+    Default : TInputDataState;
+    Alternate : TInputDataState;
+  end;
+
   PAnalogInputData = ^TAnalogInputData;
+
+  TAnalogInputDataState = record
+    Mode : Integer;
+    Value : Real;
+  end;
 
   TAnalogInputData = record
     Name : string;
-    Mode : Integer;
-    Value : Real;
+    Default : TAnalogInputDataState;
+    Alternate : TAnalogInputDataState;
   end;
 
   POutputData = ^TOutputData;

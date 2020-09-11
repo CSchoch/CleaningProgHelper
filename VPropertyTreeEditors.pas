@@ -241,9 +241,9 @@ begin
         begin
           Visible := false;
           Parent := Tree;
-          for i := 0 to High(Mode) do
+          for i := 0 to High(OutputMode) do
           begin
-            Items.Add(Mode[i]);
+            Items.Add(OutputMode[i]);
           end;
           Text := Items.Strings[Data^.Mode];
           OnKeyDown := EditKeyDown;
@@ -288,12 +288,22 @@ begin
       end;
     1 :
       begin
-        Data^.Value := TJvSpinEdit(FEdit).Value;
+        Data^.Default.Value := TJvSpinEdit(FEdit).Value;
         FTree.InvalidateNode(FNode);
       end;
     2 :
       begin
-        Data^.Mode := TComboBox(FEdit).Items.IndexOf(TComboBox(FEdit).Text);
+        Data^.Default.Mode := TComboBox(FEdit).Items.IndexOf(TComboBox(FEdit).Text);
+        FTree.InvalidateNode(FNode);
+      end;
+          3 :
+      begin
+        Data^.Alternate.Value := TJvSpinEdit(FEdit).Value;
+        FTree.InvalidateNode(FNode);
+      end;
+    4 :
+      begin
+        Data^.Alternate.Mode := TComboBox(FEdit).Items.IndexOf(TComboBox(FEdit).Text);
         FTree.InvalidateNode(FNode);
       end;
   end;
@@ -345,7 +355,7 @@ begin
           CheckMinValue := false;
           CheckMaxValue := false;
           ButtonKind := bkDiagonal;
-          Value := Data^.Value;
+          Value := Data^.Default.Value;
           OnKeyDown := EditKeyDown;
         end;
       end;
@@ -360,7 +370,42 @@ begin
           begin
             Items.Add(AnalogInMode[i]);
           end;
-          Text := Items.Strings[Data^.Mode];
+          Text := Items.Strings[Data^.Default.Mode];
+          OnKeyDown := EditKeyDown;
+        end;
+      end;
+      3 :
+      begin
+        FEdit := TJvSpinEdit.Create(nil);
+        with FEdit as TJvSpinEdit do
+        begin
+          Visible := false;
+          Parent := Tree;
+          ButtonKind := bkStandard;
+          MaxLength := 0;
+          Decimal := 2;
+          MinValue := 0;
+          MaxValue := 0;
+          ValueType := vtFloat;
+          CheckMinValue := false;
+          CheckMaxValue := false;
+          ButtonKind := bkDiagonal;
+          Value := Data^.Alternate.Value;
+          OnKeyDown := EditKeyDown;
+        end;
+      end;
+    4 :
+      begin
+        FEdit := TComboBox.Create(nil);
+        with FEdit as TComboBox do
+        begin
+          Visible := false;
+          Parent := Tree;
+          for i := 0 to High(AnalogInMode) do
+          begin
+            Items.Add(AnalogInMode[i]);
+          end;
+          Text := Items.Strings[Data^.Alternate.Mode];
           OnKeyDown := EditKeyDown;
         end;
       end;

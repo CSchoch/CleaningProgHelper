@@ -15,7 +15,7 @@ uses
   Forms,
   Dialogs,
   VirtualTrees,
-  VPropertyTreeEditors,
+
   ActiveX,
   StdCtrls;
 

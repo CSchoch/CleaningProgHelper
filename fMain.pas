@@ -28,8 +28,9 @@ uses
   ExtCtrls,
   ExtDlgs,
   ImgList,
-  csCSV,
-  uCleanProgParser,
+  uCleanProg,
+  uCleanProg.Parser,
+  uCleanProg.Settings,
   JvDialogs,
   Menus,
   JvBaseDlg,
@@ -44,7 +45,6 @@ uses
   VTreeHelper,
   VPropertyTreeEditors,
   Printers,
-  uVisio,
   fSelectTarget,
   fEditMessages,
   fSelectLangIndex,
@@ -704,8 +704,10 @@ begin
       for i := 0 to Parser.Settings.NumOfInputs - 1 do
       begin
         InputData.Name := Desc.Input[i];
-        InputData.Mode := Step.Input[i].Mode.Value;
-        InputData.Aktiv := Step.Input[i].Aktiv.Value;
+        InputData.Default.Mode := Step.Input[i].Default.Mode.Value;
+        InputData.Default.Aktiv := Step.Input[i].Default.Aktiv.Value;
+        InputData.Alternate.Mode := Step.Input[i].Alternate.Mode.Value;
+        InputData.Alternate.Aktiv := Step.Input[i].Alternate.Aktiv.Value;
         VSTHAdd(vstInputs, InputData);
       end;
     finally
@@ -718,8 +720,10 @@ begin
       for i := 0 to Parser.Settings.NumOfAnalogIn - 1 do
       begin
         AnalogInputData.Name := Desc.AnalogIn[i];
-        AnalogInputData.Mode := Trunc(Step.AnalogIn[i].Mode.Value);
-        AnalogInputData.Value := Step.AnalogIn[i].Value.Value;
+        AnalogInputData.Default.Mode := Trunc(Step.AnalogIn[i].Default.Mode.Value);
+        AnalogInputData.Default.Value := Step.AnalogIn[i].Default.Value.Value;
+        AnalogInputData.Alternate.Mode := Trunc(Step.AnalogIn[i].Alternate.Mode.Value);
+        AnalogInputData.Alternate.Value := Step.AnalogIn[i].Alternate.Value.Value;
         VSTHAdd(vstAnalogInputs, AnalogInputData);
       end;
     finally
@@ -778,6 +782,8 @@ var
   CONTROL_TIME : Integer;
   ALARM_STEP : Integer;
   MESSAGE_COLUMN : Integer;
+  sDefault : string;
+  sAlternate : string;
 begin
   INPUTS_START := 2;
   INPUTS_END := INPUTS_START + Parser.Settings.NumOfInputs - 1;
@@ -810,24 +816,64 @@ begin
   end
   else if InRange(Column, INPUTS_START, INPUTS_END) then
   begin
-    if Data.Input[Column - INPUTS_START].Aktiv.Value then
+    if Data.Input[Column - INPUTS_START].Default.Aktiv.Value then
     begin
-      Result := InputMode[Data.Input[Column - INPUTS_START].Mode.Value];
+      sDefault := InputMode[Data.Input[Column - INPUTS_START].Default.Mode.Value];
+    end
+    else
+    begin
+      sDefault := InputAktiv[Data.Input[Column - INPUTS_START].Default.Aktiv.Value];
+    end;
+
+    if Data.Input[Column - INPUTS_START].Alternate.Aktiv.Value then
+    begin
+      sAlternate := InputMode[Data.Input[Column - INPUTS_START].Alternate.Mode.Value];
+    end
+    else
+    begin
+      sAlternate := InputAktiv[Data.Input[Column - INPUTS_START].Alternate.Aktiv.Value];
+    end;
+
+    if Data.Input[Column - INPUTS_START].Default.Aktiv.Value or Data.Input[Column - INPUTS_START]
+      .Alternate.Aktiv.Value then
+    begin
+      Result := sDefault + '/' + sAlternate;
     end;
   end
   else if InRange(Column, ANALOG_INPUTS_START, ANALOG_INPUTS_END) then
   begin
-    if Data.AnalogIn[Column - ANALOG_INPUTS_START].Mode.Value > 0 then
+    if Data.AnalogIn[Column - ANALOG_INPUTS_START].Default.Mode.Value > 0 then
     begin
-      Result := Format('%s %f', [AnalogInMode[Trunc(Data.AnalogIn[Column - ANALOG_INPUTS_START].Mode.Value)],
-        Data.AnalogIn[Column - ANALOG_INPUTS_START].Value.Value]);
+      sDefault := Format('%s %f', [AnalogInMode[Trunc(Data.AnalogIn[Column - ANALOG_INPUTS_START].Default.Mode.Value)],
+        Data.AnalogIn[Column - ANALOG_INPUTS_START].Default.Value.Value]);
+    end
+    else
+    begin
+      sDefault := InputAktiv[Data.AnalogIn[Column - ANALOG_INPUTS_START].Default.Mode.Value > 0];
+    end;
+
+    if Data.AnalogIn[Column - ANALOG_INPUTS_START].Alternate.Mode.Value > 0 then
+    begin
+      sAlternate := Format('%s %f',
+        [AnalogInMode[Trunc(Data.AnalogIn[Column - ANALOG_INPUTS_START].Alternate.Mode.Value)],
+        Data.AnalogIn[Column - ANALOG_INPUTS_START].Alternate.Value.Value]);
+    end
+    else
+    begin
+      sAlternate := InputAktiv[Data.AnalogIn[Column - ANALOG_INPUTS_START].Alternate.Mode.Value > 0];
+    end;
+
+    if (Data.AnalogIn[Column - ANALOG_INPUTS_START].Default.Mode.Value > 0) or
+      (Data.AnalogIn[Column - ANALOG_INPUTS_START].Alternate.Mode.Value > 0) then
+    begin
+      Result := sDefault + '/' + sAlternate;
     end;
   end
   else if InRange(Column, OUTPUTS_START, OUTPUTS_END) then
   begin
     if Data.OutputMode[Column - OUTPUTS_START] > 0 then
     begin
-      Result := ModeShort[Data.OutputMode[Column - OUTPUTS_START]];
+      Result := OutputMode[Data.OutputMode[Column - OUTPUTS_START]];
     end;
   end
   else if InRange(Column, ANALOG_OUTPUTS_START, ANALOG_OUTPUTS_END) then
@@ -1242,74 +1288,33 @@ begin
   cMessage.Items.Add('');
   case Settings.DataSetNameMode of
     pnmSingleDataSet :
-      Parser := TCleanProgParserSingleDatasetName.Create(Settings);
+      begin
+        Parser := TCleanProgParserSingleDatasetName.Create(Settings);
+        vstInputs.Header.Columns.Delete(3);
+        vstInputs.Header.Columns.Delete(3);
+        vstAnalogInputs.Header.Columns.Delete(3);
+        vstAnalogInputs.Header.Columns.Delete(3);
+      end;
     pnmMultipleDataSets :
-      Parser := TCleanProgParser.Create(Settings);
+      begin
+        Parser := TCleanProgParser.Create(Settings);
+        vstInputs.Header.Columns.Delete(3);
+        vstInputs.Header.Columns.Delete(3);
+        vstAnalogInputs.Header.Columns.Delete(3);
+        vstAnalogInputs.Header.Columns.Delete(3);
+      end;
+    pnmBlocks :
+      begin
+        Parser := TCleanProgParserSingleDatasetName.Create(Settings);
+        cStepMode.Items.Clear();
+        cStepMode.Items.Add('Eingänge (UND)');
+        cStepMode.Items.Add('Zeit');
+        cStepMode.Items.Add('Eingänge UND Zeit');
+        cStepMode.Items.Add('Eingänge ODER Zeit');
+        cStepMode.Items.Add('Quittierung');
+        cStepMode.Items.Add('Ende Reinigung');
+      end;
   end;
-
-  (* XML := TXMLFile.Create();
-    try
-    try
-    XML.LoadFromFile(ExtractFilePath(Application.ExeName) + '\Settings.xml');
-    if XML.RootNode.Nodes.Exists('FileVersion') then
-    begin
-    FileVersion := XML.Node['FileVersion'].Attribute['Value'];
-    end
-    else
-    begin
-    FileVersion := 10;
-    end;
-
-    case FileVersion of
-    10 :
-    begin
-    FileVersion := XML.Node['NumberOfFiles'].Attribute['Value'];
-    FileVersion := XML.Node['NumberOfLanguages'].Attribute['Value'];
-    FileVersion := XML.Node['NumberOfSteps'].Attribute['Value'];
-    FileVersion := XML.Node['NumberOfOutputs'].Attribute['Value'];
-    FileVersion := XML.Node['NumberOfInputs'].Attribute['Value'];
-    FileVersion := XML.Node['NumberOfIntervalls'].Attribute['Value'];
-    FileVersion := XML.Node['NumberOfAnalogInputs'].Attribute['Value'];
-    FileVersion := XML.Node['NumberOfAnalogOutputs'].Attribute['Value'];
-
-    FileVersion := XML.Node['ProgramName'].Attribute['Value'];
-    FileVersion := XML.Node['StepName'].Attribute['Value'];
-    FileVersion := XML.Node['OutputMode'].Attribute['Value'];
-    FileVersion := XML.Node['InputMode'].Attribute['Value'];
-    FileVersion := XML.Node['InputActive'].Attribute['Value'];
-    FileVersion := XML.Node['AlarmStep'].Attribute['Value'];
-    FileVersion := XML.Node['AlarmCondition'].Attribute['Value'];
-    FileVersion := XML.Node['NextCondition'].Attribute['Value'];
-    FileVersion := XML.Node['ControlTime'].Attribute['Value'];
-    FileVersion := XML.Node['Intervall'].Attribute['Value'];
-    FileVersion := XML.Node['Loops'].Attribute['Value'];
-    FileVersion := XML.Node['NextStep'].Attribute['Value'];
-    FileVersion := XML.Node['Messages'].Attribute['Value'];
-    FileVersion := XML.Node['Pause'].Attribute['Value'];
-    FileVersion := XML.Node['StepTime'].Attribute['Value'];
-    FileVersion := XML.Node['AnalogIn'].Attribute['Value'];
-    FileVersion := XML.Node['AnalogOut'].Attribute['Value'];
-    FileVersion := XML.Node['AnalogMode'].Attribute['Value'];
-    FileVersion := XML.Node['MessageListName'].Attribute['Value'];
-    FileVersion := XML.Node['InputListName'].Attribute['Value'];
-
-    FileVersion := XML.Node['OutputListName'].Attribute['Value'];
-    FileVersion := XML.Node['AnalogInputListName'].Attribute['Value'];
-    FileVersion := XML.Node['AnalogOutputListName'].Attribute['Value'];
-    FileVersion := XML.Node['AnalogOutputUnitListName'].Attribute['Value'];
-    end
-    // 11 :
-    //  LoadXMLV11(XML);
-    end;
-    except
-    on E : Exception do
-    begin
-    FreeAndNil(XML);
-    ShowMessageFmt('Fehler in der Konfiguration: %s', [E.Message]);
-    end;
-    end;
-    finally
-    FreeAndNil(XML); *)
   Parser.Picture := iBasic.Picture;
   Parser.OnProgress := OnParseProgress;
   Parser.OnSelectLangIndex := OnSelectLangIndex;
@@ -1561,9 +1566,19 @@ begin
     Desc := Parser.Description;
     cMessage.Items.Clear;
     cMessage.Items.AddStrings(Desc.Message);
+    if Parser.Settings.DataSetNameMode = pnmBlocks then
+    begin
+      cStepMode.Items.Clear();
+      cStepMode.Items.Add('Eingänge (UND)');
+      cStepMode.Items.Add('Zeit');
+      cStepMode.Items.Add('Eingänge UND Zeit');
+      cStepMode.Items.Add('Eingänge ODER Zeit');
+      cStepMode.Items.Add('Quittierung');
+      cStepMode.Items.Add('Ende Reinigung');
+    end;
     ChangeStep(seStepInput.AsInteger);
   end;
-    if pcPages.ActivePage = tsCrosses then
+  if pcPages.ActivePage = tsCrosses then
   begin
     GenerateGrid;
   end;
@@ -1596,7 +1611,7 @@ begin
   Parser.SelectedProgram := seProgramNumber.AsInteger;
   eProgName.Text := Parser.ProgramName;
   ChangeStep(seStepInput.AsInteger);
-    if pcPages.ActivePage = tsCrosses then
+  if pcPages.ActivePage = tsCrosses then
   begin
     GenerateGrid;
   end;
@@ -1648,16 +1663,27 @@ begin
       1 :
         begin
           Step := Parser.Step[seStepInput.AsInteger];
-          Step.AnalogIn[Node.Index].Value.Value := Data.Value;
+          Step.AnalogIn[Node.Index].Default.Value.Value := Data.Default.Value;
           Parser.Step[seStepInput.AsInteger] := Step;
         end;
       2 :
         begin
           Step := Parser.Step[seStepInput.AsInteger];
-          Step.AnalogIn[Node.Index].Mode.Value := Data.Mode;
+          Step.AnalogIn[Node.Index].Default.Mode.Value := Data.Default.Mode;
           Parser.Step[seStepInput.AsInteger] := Step;
         end;
-
+      3 :
+        begin
+          Step := Parser.Step[seStepInput.AsInteger];
+          Step.AnalogIn[Node.Index].Alternate.Value.Value := Data.Alternate.Value;
+          Parser.Step[seStepInput.AsInteger] := Step;
+        end;
+      4 :
+        begin
+          Step := Parser.Step[seStepInput.AsInteger];
+          Step.AnalogIn[Node.Index].Alternate.Mode.Value := Data.Alternate.Mode;
+          Parser.Step[seStepInput.AsInteger] := Step;
+        end;
     end;
   end;
 end;
@@ -1674,8 +1700,10 @@ var
 begin
   Data := vstAnalogInputs.GetNodeData(Node);
   Data.Name := '';
-  Data.Mode := 0;
-  Data.Value := 0;
+  Data.Default.Mode := 0;
+  Data.Default.Value := 0;
+  Data.Alternate.Mode := 0;
+  Data.Alternate.Value := 0;
 end;
 
 procedure TMainForm.vstAnalogInputsGetText(Sender : TBaseVirtualTree; Node : PVirtualNode; Column : TColumnIndex;
@@ -1690,9 +1718,13 @@ begin
       0 :
         CellText := Data.Name;
       1 :
-        CellText := Format('%1.2f', [Data^.Value]);
+        CellText := Format('%1.2f', [Data^.Default.Value]);
       2 :
-        CellText := AnalogInMode[Data^.Mode];
+        CellText := AnalogInMode[Data^.Default.Mode];
+      3 :
+        CellText := Format('%1.2f', [Data^.Alternate.Value]);
+      4 :
+        CellText := AnalogInMode[Data^.Alternate.Mode];
     end;
   end;
 end;
@@ -1729,6 +1761,10 @@ begin
       1 :
         vstAnalogInputs.EditNode(Node, Column);
       2 :
+        vstAnalogInputs.EditNode(Node, Column);
+              3 :
+        vstAnalogInputs.EditNode(Node, Column);
+      4 :
         vstAnalogInputs.EditNode(Node, Column);
     end;
   end;
@@ -1929,7 +1965,8 @@ begin
   Data := vstInputs.GetNodeData(Node);
   if Assigned(Data) then
   begin
-    if ((Column = 1) and Data.Mode) or ((Column = 2) and Data.Aktiv) then
+    if ((Column = 1) and Data.Default.Mode) or ((Column = 2) and Data.Default.Aktiv) or
+      ((Column = 3) and Data.Alternate.Mode) or ((Column = 4) and Data.Alternate.Aktiv) then
     begin
       Steps := Round((CellRect.Bottom - CellRect.Top) / 14);
       Rectangle := CellRect;
@@ -2021,15 +2058,14 @@ var
 begin
   Data := vstInputs.GetNodeData(Node);
   Data.Name := '';
-  Data.Mode := False;
-  Data.Aktiv := False;
+  Data.Default.Mode := False;
+  Data.Default.Aktiv := False;
+  Data.Alternate.Mode := False;
+  Data.Alternate.Aktiv := False;
 end;
 
 procedure TMainForm.vstInputsGetText(Sender : TBaseVirtualTree; Node : PVirtualNode; Column : TColumnIndex;
   TextType : TVSTTextType; var CellText : String);
-const
-  InaktivAktiv : array [Boolean] of string = ('INAKTIV', 'AKTIV');
-  OffOn : array [Boolean] of string = ('OFF', 'ON');
 var
   Data : PInputData;
 begin
@@ -2040,9 +2076,13 @@ begin
       0 :
         CellText := Data.Name;
       1 :
-        CellText := OffOn[Data^.Mode];
+        CellText := InputMode[Data^.Default.Mode];
       2 :
-        CellText := InaktivAktiv[Data^.Aktiv];
+        CellText := InputAktiv[Data^.Default.Aktiv];
+      3 :
+        CellText := InputMode[Data^.Alternate.Mode];
+      4 :
+        CellText := InputAktiv[Data^.Alternate.Aktiv];
     end;
   end;
 end;
@@ -2081,21 +2121,41 @@ begin
       1 :
         if Assigned(Data) then
         begin
-          Data.Mode := not Data.Mode;
+          Data.Default.Mode := not Data.Default.Mode;
           vstInputs.Selected[Node] := False;
           vstInputs.RepaintNode(Node);
           Step := Parser.Step[seStepInput.AsInteger];
-          Step.Input[Node.Index].Mode.Value := Data.Mode;
+          Step.Input[Node.Index].Default.Mode.Value := Data.Default.Mode;
           Parser.Step[seStepInput.AsInteger] := Step;
         end;
       2 :
         if Assigned(Data) then
         begin
-          Data.Aktiv := not Data.Aktiv;
+          Data.Default.Aktiv := not Data.Default.Aktiv;
           vstInputs.Selected[Node] := False;
           vstInputs.RepaintNode(Node);
           Step := Parser.Step[seStepInput.AsInteger];
-          Step.Input[Node.Index].Aktiv.Value := Data.Aktiv;
+          Step.Input[Node.Index].Default.Aktiv.Value := Data.Default.Aktiv;
+          Parser.Step[seStepInput.AsInteger] := Step;
+        end;
+      3 :
+        if Assigned(Data) then
+        begin
+          Data.Alternate.Mode := not Data.Alternate.Mode;
+          vstInputs.Selected[Node] := False;
+          vstInputs.RepaintNode(Node);
+          Step := Parser.Step[seStepInput.AsInteger];
+          Step.Input[Node.Index].Alternate.Mode.Value := Data.Alternate.Mode;
+          Parser.Step[seStepInput.AsInteger] := Step;
+        end;
+      4 :
+        if Assigned(Data) then
+        begin
+          Data.Alternate.Aktiv := not Data.Alternate.Aktiv;
+          vstInputs.Selected[Node] := False;
+          vstInputs.RepaintNode(Node);
+          Step := Parser.Step[seStepInput.AsInteger];
+          Step.Input[Node.Index].Alternate.Aktiv.Value := Data.Alternate.Aktiv;
           Parser.Step[seStepInput.AsInteger] := Step;
         end;
     end;
@@ -2121,6 +2181,10 @@ begin
       1 :
         ;
       2 :
+        ;
+      3 :
+        ;
+      4 :
         ;
     end;
     Parser.Description := Description;
@@ -2275,7 +2339,7 @@ begin
       0 :
         CellText := Data.Name;
       1 :
-        CellText := Mode[Data^.Mode];
+        CellText := OutputMode[Data^.Mode];
     end;
   end;
 end;

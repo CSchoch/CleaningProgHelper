@@ -64,7 +64,7 @@ object MainForm: TMainForm
     Top = 32
     Width = 903
     Height = 632
-    ActivePage = tsBasic
+    ActivePage = tsCrosses
     Anchors = [akLeft, akTop, akRight, akBottom]
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
@@ -76,12 +76,8 @@ object MainForm: TMainForm
     TabOrder = 3
     OnChange = pcPagesChange
     OnChanging = pcPagesChanging
-    ExplicitWidth = 736
-    ExplicitHeight = 491
     object tsBasic: TTabSheet
       Caption = 'Grundbild'
-      ExplicitWidth = 728
-      ExplicitHeight = 463
       DesignSize = (
         895
         604)
@@ -105,8 +101,6 @@ object MainForm: TMainForm
         Anchors = [akLeft, akRight, akBottom]
         BevelOuter = bvNone
         TabOrder = 6
-        ExplicitTop = 380
-        ExplicitWidth = 206
         DesignSize = (
           373
           80)
@@ -211,8 +205,6 @@ object MainForm: TMainForm
     object tsInputs: TTabSheet
       Caption = 'Eing'#228'nge'
       ImageIndex = 1
-      ExplicitWidth = 728
-      ExplicitHeight = 463
       DesignSize = (
         895
         604)
@@ -396,7 +388,7 @@ object MainForm: TMainForm
         Columns = <
           item
             Position = 0
-            Width = 780
+            Width = 675
             WideText = 'Eingang'
           end
           item
@@ -407,9 +399,19 @@ object MainForm: TMainForm
           end
           item
             Alignment = taCenter
-            BiDiMode = bdLeftToRight
-            Options = [coAllowClick, coDraggable, coEnabled, coParentColor, coResizable, coShowDropMark, coVisible, coAllowFocus]
             Position = 2
+            Width = 60
+            WideText = 'Aktiv'
+          end
+          item
+            Alignment = taCenter
+            Position = 3
+            Width = 45
+            WideText = 'Status'
+          end
+          item
+            Alignment = taCenter
+            Position = 4
             Width = 60
             WideText = 'Aktiv'
           end>
@@ -430,7 +432,6 @@ object MainForm: TMainForm
           'Eingangsbedingungen oder Zeit'
           'Quittierung'
           'Ende Reinigung')
-        ExplicitTop = 410
       end
       object seDuration: TJvSpinEdit
         Left = 564
@@ -480,7 +481,6 @@ object MainForm: TMainForm
           'N'#228'chster Schitt'
           'Alarmschritt'
           '')
-        ExplicitTop = 434
       end
       object seAlarmTime: TJvSpinEdit
         Left = 623
@@ -532,7 +532,7 @@ object MainForm: TMainForm
         Columns = <
           item
             Position = 0
-            Width = 740
+            Width = 595
             WideText = 'Analogeingang'
           end
           item
@@ -543,9 +543,19 @@ object MainForm: TMainForm
           end
           item
             Alignment = taCenter
-            BiDiMode = bdLeftToRight
-            Options = [coAllowClick, coDraggable, coEnabled, coParentColor, coResizable, coShowDropMark, coVisible, coAllowFocus]
             Position = 2
+            Width = 85
+            WideText = 'Modus'
+          end
+          item
+            Alignment = taCenter
+            Position = 3
+            Width = 60
+            WideText = 'Wert'
+          end
+          item
+            Alignment = taCenter
+            Position = 4
             Width = 85
             WideText = 'Modus'
           end>
@@ -554,8 +564,6 @@ object MainForm: TMainForm
     object tsOutputs: TTabSheet
       Caption = 'Ausg'#228'nge'
       ImageIndex = 2
-      ExplicitWidth = 728
-      ExplicitHeight = 463
       DesignSize = (
         895
         604)
@@ -754,8 +762,6 @@ object MainForm: TMainForm
         TabOrder = 4
         OnChange = cMessageChange
         OnKeyDown = cMessageKeyDown
-        ExplicitTop = 410
-        ExplicitWidth = 643
       end
       object seIntervall1On: TJvSpinEdit
         Left = 82
@@ -849,8 +855,6 @@ object MainForm: TMainForm
       Caption = 'Kreuzchen'
       ImageIndex = 3
       OnShow = tsCrossesShow
-      ExplicitWidth = 728
-      ExplicitHeight = 463
       DesignSize = (
         895
         604)
@@ -929,27 +933,25 @@ object MainForm: TMainForm
         object lLegend1: TLabel
           Left = 11
           Top = 19
-          Width = 262
+          Width = 241
           Height = 13
-          Caption = 'Eing'#228'nge: 1 = Aktiv/On; 0 = Aktiv/Off; Leer = Inaktiv '
+          Caption = 'Eing'#228'nge: Schritt/Alternativschritt; Leer = Inaktiv '
         end
         object lLegend2: TLabel
           Left = 11
           Top = 35
-          Width = 396
+          Width = 515
           Height = 13
           Caption = 
-            'Analoge Eing'#228'nge: >/<"Wert" = Vergleich auf gr'#246#223'er/kleiner Wert;' +
-            '  Leer = Inaktiv'
+            'Analoge Eing'#228'nge: Schritt/Alternativschritt, >/<"Wert" = Verglei' +
+            'ch auf gr'#246#223'er/kleiner Wert;  Leer = Inaktiv'
         end
         object lLegend3: TLabel
           Left = 11
           Top = 51
-          Width = 437
+          Width = 126
           Height = 13
-          Caption = 
-            'Ausg'#228'nge: A = Aktiv; I 1/2 = Intervall 1/2; Inv I 1/2 = Invers I' +
-            'ntervall 1/2; Leer = Inaktiv '
+          Caption = 'Ausg'#228'nge: Leer = Inaktiv '
         end
       end
     end
@@ -957,8 +959,6 @@ object MainForm: TMainForm
       Caption = 'Diagramm'
       ImageIndex = 4
       OnShow = tsDiagramShow
-      ExplicitWidth = 728
-      ExplicitHeight = 463
       DesignSize = (
         895
         604)
@@ -971,15 +971,13 @@ object MainForm: TMainForm
         VertScrollBar.Increment = 40
         Anchors = [akLeft, akTop, akRight, akBottom]
         TabOrder = 0
-        ExplicitWidth = 722
-        ExplicitHeight = 457
         DesignSize = (
           868
           594)
         object iDiagram: TImage
           Left = 3
           Top = 3
-          Width = 820
+          Width = 778
           Height = 6033
           Anchors = [akLeft, akTop, akRight]
           AutoSize = True
@@ -1009,7 +1007,6 @@ object MainForm: TMainForm
     Anchors = [akTop, akRight]
     TabOrder = 2
     OnChange = seLanguageChange
-    ExplicitLeft = 700
   end
   object eProgName: TEdit
     Left = 108
@@ -1020,7 +1017,6 @@ object MainForm: TMainForm
     Enabled = False
     TabOrder = 1
     OnChange = eProgNameChange
-    ExplicitWidth = 536
   end
   object taMain: TActionList
     Images = imlActions

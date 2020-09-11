@@ -3,7 +3,7 @@
 			<ProjectGuid>{6B5EF758-B991-42D7-80D0-144F9C1D3B4B}</ProjectGuid>
 			<MainSource>CleanProgHelper.dpr</MainSource>
 			<Basis>True</Basis>
-			<Config Condition="'$(Config)'==''">Release</Config>
+			<Config Condition="'$(Config)'==''">Debug</Config>
 			<Platform>Win32</Platform>
 			<AppType>Application</AppType>
 			<FrameworkType>VCL</FrameworkType>
@@ -64,7 +64,7 @@
 				<Form>MainForm</Form>
 			</DCCReference>
 			<DCCReference Include="csCSV.pas"/>
-			<DCCReference Include="uCleanProgParser.pas"/>
+			<DCCReference Include="uCleanProg.Parser.pas"/>
 			<DCCReference Include="VTreeHelper.pas"/>
 			<DCCReference Include="VPropertyTreeEditors.pas"/>
 			<DCCReference Include="uVisio.pas"/>
@@ -81,6 +81,8 @@
 				<Form>AboutBox</Form>
 			</DCCReference>
 			<DCCReference Include="uParser.pas"/>
+			<DCCReference Include="uCleanProg.Settings.pas"/>
+			<DCCReference Include="uCleanProg.pas"/>
 			<BuildConfiguration Include="Debug">
 				<Key>Cfg_2</Key>
 				<CfgParent>Base</CfgParent>
@@ -109,7 +111,7 @@
 						<VersionInfo Name="MajorVer">1</VersionInfo>
 						<VersionInfo Name="MinorVer">7</VersionInfo>
 						<VersionInfo Name="Release">19</VersionInfo>
-						<VersionInfo Name="Build">420</VersionInfo>
+						<VersionInfo Name="Build">433</VersionInfo>
 						<VersionInfo Name="Debug">False</VersionInfo>
 						<VersionInfo Name="PreRelease">False</VersionInfo>
 						<VersionInfo Name="Special">False</VersionInfo>
@@ -121,7 +123,7 @@
 					<VersionInfoKeys>
 						<VersionInfoKeys Name="CompanyName"/>
 						<VersionInfoKeys Name="FileDescription"/>
-						<VersionInfoKeys Name="FileVersion">1.7.19.420</VersionInfoKeys>
+						<VersionInfoKeys Name="FileVersion">1.7.19.433</VersionInfoKeys>
 						<VersionInfoKeys Name="InternalName"/>
 						<VersionInfoKeys Name="LegalCopyright">C.Schoch</VersionInfoKeys>
 						<VersionInfoKeys Name="LegalTrademarks"/>

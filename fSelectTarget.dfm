@@ -38,7 +38,6 @@ object SelectTarget: TSelectTarget
     Width = 106
     Height = 21
     MinValue = 1.000000000000000000
-    Value = 1.000000000000000000
     TabOrder = 0
   end
   object btOk: TButton

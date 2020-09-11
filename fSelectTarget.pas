@@ -15,9 +15,9 @@ uses
   Forms,
   Dialogs,
   StdCtrls,
-  Mask,
+
   JvExMask,
-  JvSpin;
+  JvSpin, Mask;
 
 type
   TSelectTarget = class(TForm)
