@@ -53,24 +53,24 @@ type
     procedure LoadXMLV13(XML : TXMLFile);
     procedure SendProgress();
     procedure ParseFiles(); virtual;
-    procedure ParseBlockName(const task : IOmniTask); virtual;
-    procedure ParseStepName(const task : IOmniTask);
-    procedure ParseOutputMode(const task : IOmniTask);
-    procedure ParseInputMode(const task : IOmniTask);
-    procedure ParseInputAktiv(const task : IOmniTask);
-    procedure ParseIntervall(const task : IOmniTask);
-    procedure ParsePause(const task : IOmniTask);
-    procedure ParseAnalogIn(const task : IOmniTask);
-    procedure ParseAnalogMode(const task : IOmniTask);
-    procedure ParseAnalogOut(const task : IOmniTask);
-    procedure ParseAlarmStep(const task : IOmniTask);
-    procedure ParseAlarmCond(const task : IOmniTask);
-    procedure ParseNextCond(const task : IOmniTask);
-    procedure ParseContrTime(const task : IOmniTask);
-    procedure ParseLoops(const task : IOmniTask);
-    procedure ParseNextStep(const task : IOmniTask);
-    procedure ParseMessage(const task : IOmniTask);
-    procedure ParseStepTime(const task : IOmniTask);
+    procedure ParseBlockName; virtual;
+    procedure ParseStepName;
+    procedure ParseOutputMode;
+    procedure ParseInputMode;
+    procedure ParseInputAktiv;
+    procedure ParseIntervall;
+    procedure ParsePause;
+    procedure ParseAnalogIn;
+    procedure ParseAnalogMode;
+    procedure ParseAnalogOut;
+    procedure ParseAlarmStep;
+    procedure ParseAlarmCond;
+    procedure ParseNextCond;
+    procedure ParseContrTime;
+    procedure ParseLoops;
+    procedure ParseNextStep;
+    procedure ParseMessage;
+    procedure ParseStepTime;
     function GetStepCount : Integer;
     function GetStep(index : Integer) : TStep;
     procedure SetStep(index : Integer; const Value : TStep);
@@ -118,7 +118,7 @@ type
 
   TCleanProgParserSingleDatasetName = class(TCleanProgParser)
   protected
-    procedure ParseBlockName(const task : IOmniTask); override;
+    procedure ParseBlockName; override;
   public
     procedure SaveFiles(Folder : String); override;
   end;
@@ -129,14 +129,14 @@ type
   public
     procedure SaveFiles(Folder : String); override;
   protected
-    procedure ParseProgramName(const task : IOmniTask);
-    procedure ParseProgramStep(const task : IOmniTask);
-    procedure ParseInputModeAlternate(const task : IOmniTask);
-    procedure ParseInputAktivAlternate(const task : IOmniTask);
-    procedure ParseAnalogInAlternate(const task : IOmniTask);
-    procedure ParseAnalogModeAlternate(const task : IOmniTask);
-    procedure ParseNextCondAlternate(const task : IOmniTask);
-    procedure ParseNextStepAlternate(const task : IOmniTask);
+    procedure ParseProgramName;
+    procedure ParseProgramStep;
+    procedure ParseInputModeAlternate;
+    procedure ParseInputAktivAlternate;
+    procedure ParseAnalogInAlternate;
+    procedure ParseAnalogModeAlternate;
+    procedure ParseNextCondAlternate;
+    procedure ParseNextStepAlternate;
 
   end;
 
@@ -195,24 +195,24 @@ begin
   FSendCount := 100;
 
   SendProgress;
-  CreateTask(ParseBlockName).Run;
-  CreateTask(ParseStepName).Run;
-  CreateTask(ParseOutputMode).Run;
-  CreateTask(ParseInputMode).Run;
-  CreateTask(ParseInputAktiv).Run;
-  CreateTask(ParseIntervall).Run;
-  CreateTask(ParsePause).Run;
-  CreateTask(ParseAnalogIn).Run;
-  CreateTask(ParseAnalogMode).Run;
-  CreateTask(ParseAnalogOut).Run;
-  CreateTask(ParseAlarmStep).Run;
-  CreateTask(ParseAlarmCond).Run;
-  CreateTask(ParseNextCond).Run;
-  CreateTask(ParseContrTime).Run;
-  CreateTask(ParseLoops).Run;
-  CreateTask(ParseNextStep).Run;
-  CreateTask(ParseMessage).Run;
-  CreateTask(ParseStepTime).Run;
+  ParseBlockName;
+  ParseStepName;
+  ParseOutputMode;
+  ParseInputMode;
+  ParseInputAktiv;
+  ParseIntervall;
+  ParsePause;
+  ParseAnalogIn;
+  ParseAnalogMode;
+  ParseAnalogOut;
+  ParseAlarmStep;
+  ParseAlarmCond;
+  ParseNextCond;
+  ParseContrTime;
+  ParseLoops;
+  ParseNextStep;
+  ParseMessage;
+  ParseStepTime;
 end;
 
 procedure TCleanProgParser.LoadXMLV10(XML : TXMLFile);
@@ -3375,12 +3375,11 @@ end;
 procedure TCleanProgParser.SendProgress();
 begin
   Inc(FSendCount);
-  { TODO : Einkommentieren }
-//  if Assigned(FOnProgress) and (FSendCount >= 10) then
-//  begin
-//    FOnProgress(self, (FCount * 100) / FMaxCount);
-//    FSendCount := 0;
-//  end;
+  if Assigned(FOnProgress) and (FSendCount >= 10) then
+  begin
+    FOnProgress(self, (FCount * 100) / FMaxCount);
+    FSendCount := 0;
+  end;
 end;
 
 procedure TCleanProgParser.SetDescription(const Value : TDescription);
@@ -3818,35 +3817,37 @@ begin
   FSendCount := 100;
 
   SendProgress;
-  CreateTask(ParseProgramName, 'ParseProgramName').Run;
-  CreateTask(ParseProgramStep).Run;
-  CreateTask(ParseBlockName).Run;
-  CreateTask(ParseStepName).Run;
-  CreateTask(ParseOutputMode).Run;
-  CreateTask(ParseInputMode).Run;
-  CreateTask(ParseInputModeAlternate).Run;
-  CreateTask(ParseInputAktiv).Run;
-  CreateTask(ParseInputAktivAlternate).Run;
-  CreateTask(ParseIntervall).Run;
-  CreateTask(ParsePause).Run;
-  CreateTask(ParseAnalogIn).Run;
-  CreateTask(ParseAnalogInAlternate).Run;
-  CreateTask(ParseAnalogMode).Run;
-  CreateTask(ParseAnalogModeAlternate).Run;
-  CreateTask(ParseAnalogOut).Run;
-  CreateTask(ParseAlarmStep).Run;
-  CreateTask(ParseAlarmCond).Run;
-  CreateTask(ParseNextCond).Run;
-  CreateTask(ParseNextCondAlternate).Run;
-  CreateTask(ParseContrTime).Run;
-  CreateTask(ParseLoops).Run;
-  CreateTask(ParseNextStep).Run;
-  CreateTask(ParseNextStepAlternate).Run;
-  CreateTask(ParseMessage).Run;
-  CreateTask(ParseStepTime).Run;
+  ParseProgramName;
+  ParseProgramStep;
+  ParseBlockName;
+  ParseStepName;
+  ParseOutputMode;
+  ParseInputMode;
+  ParseInputModeAlternate;
+  ParseInputAktiv;
+  ParseInputAktivAlternate;
+  ParseIntervall;
+  ParsePause;
+  ParseAnalogIn;
+  ParseAnalogInAlternate;
+  ParseAnalogMode;
+  ParseAnalogModeAlternate;
+  ParseAnalogOut;
+  ParseAlarmStep;
+  ParseAlarmCond;
+  ParseNextCond;
+  ParseNextCondAlternate;
+  ParseContrTime;
+  ParseLoops;
+  ParseNextStep;
+  ParseNextStepAlternate;
+  ParseMessage;
+  ParseStepTime;
+
+
 end;
 
-procedure TCleanProgParserBlockBased.ParseProgramName(const task : IOmniTask);
+procedure TCleanProgParserBlockBased.ParseProgramName;
 var
   i : Integer;
   s : string;
@@ -4218,7 +4219,7 @@ begin
   end;
 end;
 
-procedure TCleanProgParserBlockBased.ParseInputModeAlternate(const task : IOmniTask);
+procedure TCleanProgParserBlockBased.ParseInputModeAlternate;
 var
   i, k : Integer;
   s : string;
@@ -4246,7 +4247,7 @@ begin
   end;
 end;
 
-procedure TCleanProgParserBlockBased.ParseInputAktivAlternate(const task : IOmniTask);
+procedure TCleanProgParserBlockBased.ParseInputAktivAlternate;
 var
   i, k : Integer;
   s : string;
@@ -4274,7 +4275,7 @@ begin
   end;
 end;
 
-procedure TCleanProgParserBlockBased.ParseAnalogInAlternate(const task : IOmniTask);
+procedure TCleanProgParserBlockBased.ParseAnalogInAlternate;
 var
   i, k : Integer;
   s : string;
@@ -4302,7 +4303,7 @@ begin
   end;
 end;
 
-procedure TCleanProgParserBlockBased.ParseAnalogModeAlternate(const task : IOmniTask);
+procedure TCleanProgParserBlockBased.ParseAnalogModeAlternate;
 var
   i, k : Integer;
   s : string;
@@ -4330,7 +4331,7 @@ begin
   end;
 end;
 
-procedure TCleanProgParserBlockBased.ParseNextCondAlternate(const task : IOmniTask);
+procedure TCleanProgParserBlockBased.ParseNextCondAlternate;
 var
   i : Integer;
   s : string;
@@ -4355,7 +4356,7 @@ begin
   end;
 end;
 
-procedure TCleanProgParserBlockBased.ParseNextStepAlternate(const task : IOmniTask);
+procedure TCleanProgParserBlockBased.ParseNextStepAlternate;
 var
   i : Integer;
   s : string;
@@ -4380,7 +4381,7 @@ begin
   end;
 end;
 
-procedure TCleanProgParserBlockBased.ParseProgramStep(const task : IOmniTask);
+procedure TCleanProgParserBlockBased.ParseProgramStep;
 var
   i : Integer;
   s : string;

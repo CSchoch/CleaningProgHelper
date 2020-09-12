@@ -10,7 +10,7 @@ uses
   Forms,
   fMain in 'fMain.pas' {MainForm},
   csCSV in 'csCSV.pas',
-  uCleanProg.Parser in 'uCleanProg.Parser.pas',
+  ucleanprog.parser in 'ucleanprog.parser.pas',
   VTreeHelper in 'VTreeHelper.pas',
   VPropertyTreeEditors in 'VPropertyTreeEditors.pas',
   uVisio in 'uVisio.pas',

@@ -91,8 +91,6 @@ type
     vstInputs : TVirtualStringTree;
     odBasicXML : TJvOpenDialog;
     vstOutputs : TVirtualStringTree;
-    Panel1 : TPanel;
-    pbParseProgress : TUbuntuProgress;
     lStepMode : TLabel;
     cStepMode : TComboBox;
     lDuration : TLabel;
@@ -162,7 +160,6 @@ type
     procedure acRightExecute(Sender : TObject);
     procedure acLeftExecute(Sender : TObject);
     procedure FormDestroy(Sender : TObject);
-    procedure OnParseProgress(Sender : TObject; Progress : Real);
     procedure OnSelectLangIndex(Sender : TObject; LangDesc : TStringList; out Indizes : TList<Integer>);
     procedure btBasicImportClick(Sender : TObject);
     procedure btBasicExportClick(Sender : TObject);
@@ -379,7 +376,6 @@ begin
   try
     if odBasicCsv.Execute and (odBasicCsv.FileName <> '') then
     begin
-      pbParseProgress.Position := 0.0;
       Parser.LoadFiles(odBasicCsv.Files);
     end;
   finally
@@ -1340,7 +1336,6 @@ begin
       end;
   end;
   Parser.Picture := iBasic.Picture;
-  Parser.OnProgress := OnParseProgress;
   Parser.OnSelectLangIndex := OnSelectLangIndex;
   // end;
 end;
@@ -1486,12 +1481,6 @@ begin
   { DONE : Deaktivieren wenn kein Prog geladen }
   Parser.InsertStep(seStepInput.AsInteger);
   ChangeStep(seStepInput.AsInteger);
-end;
-
-procedure TMainForm.OnParseProgress(Sender : TObject; Progress : Real);
-begin
-  pbParseProgress.Position := Progress;
-  Application.ProcessMessages;
 end;
 
 procedure TMainForm.OnSelectLangIndex(Sender : TObject; LangDesc : TStringList; out Indizes : TList<Integer>);

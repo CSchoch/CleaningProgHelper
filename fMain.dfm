@@ -64,7 +64,7 @@ object MainForm: TMainForm
     Top = 32
     Width = 992
     Height = 687
-    ActivePage = tsInputs
+    ActivePage = tsBasic
     Anchors = [akLeft, akTop, akRight, akBottom]
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
@@ -93,28 +93,6 @@ object MainForm: TMainForm
         ExplicitWidth = 722
         ExplicitHeight = 371
       end
-      object Panel1: TPanel
-        Left = 519
-        Top = 576
-        Width = 462
-        Height = 80
-        Anchors = [akLeft, akRight, akBottom]
-        BevelOuter = bvNone
-        TabOrder = 6
-        DesignSize = (
-          462
-          80)
-        object pbParseProgress: TUbuntuProgress
-          Left = 8
-          Top = 29
-          Width = 451
-          Height = 19
-          Anchors = [akLeft, akRight, akBottom]
-          Max = 100.000000000000000000
-          Speed = msSlow
-          ExplicitWidth = 281
-        end
-      end
       object btBasicImport: TBitBtn
         Left = 3
         Top = 576
@@ -128,7 +106,6 @@ object MainForm: TMainForm
         ShowHint = True
         TabOrder = 0
         OnClick = btBasicImportClick
-        ExplicitTop = 521
       end
       object btBasicExport: TBitBtn
         Left = 89
@@ -143,7 +120,6 @@ object MainForm: TMainForm
         ShowHint = True
         TabOrder = 1
         OnClick = btBasicExportClick
-        ExplicitTop = 521
       end
       object btBasicImportPicture: TButton
         Left = 175
@@ -158,7 +134,6 @@ object MainForm: TMainForm
         TabOrder = 2
         WordWrap = True
         OnClick = btBasicImportPictureClick
-        ExplicitTop = 521
       end
       object btBasicLoad: TButton
         Left = 261
@@ -173,7 +148,6 @@ object MainForm: TMainForm
         TabOrder = 3
         WordWrap = True
         OnClick = btBasicLoadClick
-        ExplicitTop = 521
       end
       object btBasicSave: TButton
         Left = 347
@@ -189,7 +163,6 @@ object MainForm: TMainForm
         TabOrder = 4
         WordWrap = True
         OnClick = btBasicSaveClick
-        ExplicitTop = 521
       end
       object btBasicLoadDesc: TButton
         Left = 433
@@ -205,7 +178,6 @@ object MainForm: TMainForm
         TabOrder = 5
         WordWrap = True
         OnClick = btBasicLoadDescClick
-        ExplicitTop = 521
       end
     end
     object tsInputs: TTabSheet
@@ -761,7 +733,6 @@ object MainForm: TMainForm
         Enabled = False
         TabOrder = 1
         OnChange = eStepNameChange
-        ExplicitWidth = 789
       end
       object vstOutputs: TVirtualStringTree
         Left = 3
@@ -789,12 +760,10 @@ object MainForm: TMainForm
         OnGetText = vstOutputsGetText
         OnKeyDown = vstOutputsKeyDown
         OnMouseUp = vstOutputsMouseUp
-        ExplicitWidth = 889
-        ExplicitHeight = 410
         Columns = <
           item
             Position = 0
-            Width = 838
+            Width = 834
             WideText = 'Ausgang'
           end
           item
@@ -825,7 +794,6 @@ object MainForm: TMainForm
         Anchors = [akLeft, akBottom]
         TabOrder = 5
         OnChange = seIntervall1OnChange
-        ExplicitTop = 578
       end
       object seIntervall1Off: TJvSpinEdit
         Left = 191
@@ -837,7 +805,6 @@ object MainForm: TMainForm
         Anchors = [akLeft, akBottom]
         TabOrder = 6
         OnChange = seIntervall1OffChange
-        ExplicitTop = 591
       end
       object seIntervall2On: TJvSpinEdit
         Left = 382
@@ -849,7 +816,6 @@ object MainForm: TMainForm
         Anchors = [akLeft, akBottom]
         TabOrder = 7
         OnChange = seIntervall2OnChange
-        ExplicitTop = 591
       end
       object seIntervall2Off: TJvSpinEdit
         Left = 491
@@ -861,7 +827,6 @@ object MainForm: TMainForm
         Anchors = [akLeft, akBottom]
         TabOrder = 8
         OnChange = seIntervall2OffChange
-        ExplicitTop = 591
       end
       object vstAnalogOutputs: TVirtualStringTree
         Left = 3
@@ -888,12 +853,10 @@ object MainForm: TMainForm
         OnGetText = vstAnalogOutputsGetText
         OnKeyDown = vstAnalogOutputsKeyDown
         OnMouseUp = vstAnalogOutputsMouseUp
-        ExplicitTop = 443
-        ExplicitWidth = 889
         Columns = <
           item
             Position = 0
-            Width = 843
+            Width = 839
             WideText = 'Analogausgang'
           end
           item
@@ -940,8 +903,6 @@ object MainForm: TMainForm
         OnFreeNode = vstCrossesFreeNode
         OnGetText = vstCrossesGetText
         OnHeaderDrawQueryElements = vstCrossesHeaderDrawQueryElements
-        ExplicitWidth = 889
-        ExplicitHeight = 512
         Columns = <>
         WideDefaultText = ''
       end
@@ -961,7 +922,6 @@ object MainForm: TMainForm
         ParentFont = False
         TabOrder = 1
         OnClick = btPrintGridClick
-        ExplicitTop = 521
       end
       object btExportGrid: TButton
         Left = 89
@@ -982,7 +942,6 @@ object MainForm: TMainForm
         ShowHint = True
         TabOrder = 2
         OnClick = btExportGridClick
-        ExplicitTop = 521
       end
       object gbCrossesLegend: TGroupBox
         Left = 175
@@ -992,8 +951,6 @@ object MainForm: TMainForm
         Anchors = [akLeft, akRight, akBottom]
         Caption = ' Legende '
         TabOrder = 3
-        ExplicitTop = 521
-        ExplicitWidth = 717
         object lLegend1: TLabel
           Left = 11
           Top = 19
@@ -1041,7 +998,7 @@ object MainForm: TMainForm
         object iDiagram: TImage
           Left = 3
           Top = 3
-          Width = 783
+          Width = 762
           Height = 6033
           Anchors = [akLeft, akTop, akRight]
           AutoSize = True
@@ -1057,7 +1014,6 @@ object MainForm: TMainForm
     Width = 44
     Height = 21
     MinValue = 1.000000000000000000
-    Value = 1.000000000000000000
     Enabled = False
     TabOrder = 0
     OnChange = seBlockNumberChange
@@ -1068,6 +1024,7 @@ object MainForm: TMainForm
     Width = 44
     Height = 21
     MinValue = 1.000000000000000000
+    Value = 1.000000000000000000
     Anchors = [akTop, akRight]
     TabOrder = 2
     OnChange = seLanguageChange
