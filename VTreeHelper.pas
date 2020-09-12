@@ -74,9 +74,11 @@ type
     AlarmStep : Integer;
     AlarmCond : Integer;
     NextCond : Integer;
+    NextCondAlternate : Integer;
     ContrTime : Integer;
     Loops : Integer;
     NextStep : Integer;
+    NextStepAlternate : Integer;
     Message : Integer;
     Time : Integer;
 

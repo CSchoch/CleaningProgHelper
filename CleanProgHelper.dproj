@@ -26,7 +26,7 @@
 		<PropertyGroup Condition="'$(Base)'!=''">
 			<DCC_SYMBOL_PLATFORM>false</DCC_SYMBOL_PLATFORM>
 			<ImageDebugInfo>true</ImageDebugInfo>
-			<DCC_UnitSearchPath>C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\Jedi\jcl\source;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\Jedi\jvcl\resources;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\vst\Source;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\Jedi\jcl\source\include;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\pas;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\Jedi\jvcl\run;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\Jedi\jvcl\common;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\TShutDownKomponente\D10;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\DEC_5_2\Part_I;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\csProgressBarEx;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\TScrollingCredits;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\Jedi\jcl\source\common;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\Jedi\jcl\source\windows;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\FastMM4;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\TUbuntuProgress;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\TShutDownKomponente\D15;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+			<DCC_UnitSearchPath>C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\Jedi\jcl\source;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\vst\Source;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\pas;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\Jedi\jvcl\run;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\TShutDownKomponente\D10;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\DEC_5_2\Part_I;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\csProgressBarEx;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\TScrollingCredits;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\Jedi\jcl\source\common;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\Jedi\jcl\source\windows;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\FastMM4;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\TUbuntuProgress;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\TShutDownKomponente\D15;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\OmniThreadLibrary;C:\Users\Chef\Documents\RAD Studio\Projekte\ressourcekit\Komponenten\OmniThreadLibrary\src;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
 			<DCC_ImageBase>00400000</DCC_ImageBase>
 			<DCC_MapFile>3</DCC_MapFile>
 			<DCC_RemoteDebug>true</DCC_RemoteDebug>
@@ -64,7 +64,7 @@
 				<Form>MainForm</Form>
 			</DCCReference>
 			<DCCReference Include="csCSV.pas"/>
-			<DCCReference Include="uCleanProg.Parser.pas"/>
+			<DCCReference Include="ucleanprog.parser.pas"/>
 			<DCCReference Include="VTreeHelper.pas"/>
 			<DCCReference Include="VPropertyTreeEditors.pas"/>
 			<DCCReference Include="uVisio.pas"/>
@@ -111,7 +111,7 @@
 						<VersionInfo Name="MajorVer">1</VersionInfo>
 						<VersionInfo Name="MinorVer">7</VersionInfo>
 						<VersionInfo Name="Release">19</VersionInfo>
-						<VersionInfo Name="Build">433</VersionInfo>
+						<VersionInfo Name="Build">439</VersionInfo>
 						<VersionInfo Name="Debug">False</VersionInfo>
 						<VersionInfo Name="PreRelease">False</VersionInfo>
 						<VersionInfo Name="Special">False</VersionInfo>
@@ -123,7 +123,7 @@
 					<VersionInfoKeys>
 						<VersionInfoKeys Name="CompanyName"/>
 						<VersionInfoKeys Name="FileDescription"/>
-						<VersionInfoKeys Name="FileVersion">1.7.19.433</VersionInfoKeys>
+						<VersionInfoKeys Name="FileVersion">1.7.19.439</VersionInfoKeys>
 						<VersionInfoKeys Name="InternalName"/>
 						<VersionInfoKeys Name="LegalCopyright">C.Schoch</VersionInfoKeys>
 						<VersionInfoKeys Name="LegalTrademarks"/>

@@ -99,7 +99,7 @@ type
     Message : TStringList;
   end;
 
-  TProgram = record
+  TBlock = record
     Name : TValue<string>;
     Step : array of TStep;
     NameFile : Integer;
@@ -116,6 +116,13 @@ type
     AnalogInAlternateModeFile : Integer;
     AnalogOutFile : Integer;
     ModeFile : Integer;
+  end;
+
+  TProgram = record
+      Name : TValue<string>;
+      Step : array of TValue<Integer>;
+      NameFile : Integer;
+      StepFile : Integer;
   end;
 
 implementation
@@ -137,7 +144,6 @@ begin
   inherited;
 end;
 
-{ TSetting }
 { TStep }
 
 function TStep.Copy : TStep;
@@ -153,9 +159,11 @@ begin
   Buffer.AlarmStep := self.AlarmStep;
   Buffer.AlarmCond := self.AlarmCond;
   Buffer.NextCond := self.NextCond;
+  Buffer.NextCondAlternate := self.NextCondAlternate;
   Buffer.ContrTime := self.ContrTime;
   Buffer.LOOPS := self.LOOPS;
   Buffer.NextStep := self.NextStep;
+  Buffer.NextStepAlternate := self.NextStepAlternate;
   Buffer.Message := self.Message;
   Buffer.Time := self.Time;
   Result := Buffer;

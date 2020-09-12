@@ -78,7 +78,7 @@ type
     bffBasicSaveCsv : TJvBrowseForFolderDialog;
     XPManifest1 : TXPManifest;
     lProgram : TLabel;
-    seProgramNumber : TJvSpinEdit;
+    seBlockNumber : TJvSpinEdit;
     eProgName : TEdit;
     lStepInput : TLabel;
     eStepNameInput : TEdit;
@@ -153,6 +153,10 @@ type
     tsDiagram : TTabSheet;
     sbDiagram : TScrollBox;
     iDiagram : TImage;
+    lStepModeAlternate : TLabel;
+    cStepModeAlternate : TComboBox;
+    lNextAlternatStep : TLabel;
+    seNextAlternateStep : TJvSpinEdit;
     procedure FormCreate(Sender : TObject);
     procedure btBasicImportPictureClick(Sender : TObject);
     procedure acRightExecute(Sender : TObject);
@@ -162,7 +166,7 @@ type
     procedure OnSelectLangIndex(Sender : TObject; LangDesc : TStringList; out Indizes : TList<Integer>);
     procedure btBasicImportClick(Sender : TObject);
     procedure btBasicExportClick(Sender : TObject);
-    procedure seProgramNumberChange(Sender : TObject);
+    procedure seBlockNumberChange(Sender : TObject);
     procedure eProgNameChange(Sender : TObject);
     procedure seStepChange(Sender : TObject);
     procedure eStepNameChange(Sender : TObject);
@@ -316,7 +320,7 @@ begin
   btBasicExport.Enabled := False;
   btBasicLoad.Enabled := False;
   btBasicSave.Enabled := False;
-  seProgramNumber.Enabled := False;
+  seBlockNumber.Enabled := False;
   eProgName.Enabled := False;
   seStepInput.Enabled := False;
   eStepNameInput.Enabled := False;
@@ -338,7 +342,7 @@ begin
     btBasicExport.Enabled := True;
     btBasicLoad.Enabled := True;
     btBasicSave.Enabled := True;
-    seProgramNumber.Enabled := True;
+    seBlockNumber.Enabled := True;
     eProgName.Enabled := True;
     seStepInput.Enabled := True;
     eStepNameInput.Enabled := True;
@@ -361,7 +365,7 @@ begin
   btBasicLoad.Enabled := False;
   btBasicSave.Enabled := False;
   btBasicLoadDesc.Enabled := False;
-  seProgramNumber.Enabled := False;
+  seBlockNumber.Enabled := False;
   eProgName.Enabled := False;
   seStepInput.Enabled := False;
   eStepNameInput.Enabled := False;
@@ -379,17 +383,17 @@ begin
       Parser.LoadFiles(odBasicCsv.Files);
     end;
   finally
-    if Parser.Settings.NumOfProgs > 0 then
+    if Parser.Settings.NumOfBlocks > 0 then
     begin
-      seProgramNumber.MaxValue := Parser.Settings.NumOfProgs;
+      seBlockNumber.MaxValue := Parser.Settings.NumOfBlocks;
       Parser.Language := seLanguage.AsInteger;
-      Parser.SelectedProgram := seProgramNumber.AsInteger;
-      eProgName.Text := Parser.ProgramName;
+      Parser.SelectedBlock := seBlockNumber.AsInteger;
+      eProgName.Text := Parser.BlockName;
       Desc := Parser.Description;
       cMessage.Items.Clear;
       cMessage.Items.AddStrings(Desc.Message);
       ChangeStep(seStepInput.AsInteger);
-      seProgramNumber.Enabled := True;
+      seBlockNumber.Enabled := True;
       eProgName.Enabled := True;
       btBasicExport.Enabled := True;
       btBasicSave.Enabled := True;
@@ -431,7 +435,7 @@ begin
   btBasicLoad.Enabled := False;
   btBasicSave.Enabled := False;
   btBasicLoadDesc.Enabled := False;
-  seProgramNumber.Enabled := False;
+  seBlockNumber.Enabled := False;
   eProgName.Enabled := False;
   seStepInput.Enabled := False;
   eStepNameInput.Enabled := False;
@@ -448,17 +452,17 @@ begin
       Parser.LoadFromXML(odBasicXML.FileName);
     end;
   finally
-    if Parser.Settings.NumOfProgs > 0 then
+    if Parser.Settings.NumOfBlocks > 0 then
     begin
-      seProgramNumber.MaxValue := Parser.Settings.NumOfProgs;
+      seBlockNumber.MaxValue := Parser.Settings.NumOfBlocks;
       seLanguage.AsInteger := Parser.Language;
-      seProgramNumber.AsInteger := Parser.SelectedProgram;
-      eProgName.Text := Parser.ProgramName;
+      seBlockNumber.AsInteger := Parser.SelectedBlock;
+      eProgName.Text := Parser.BlockName;
       Desc := Parser.Description;
       cMessage.Items.Clear;
       cMessage.Items.AddStrings(Desc.Message);
       ChangeStep(seStepInput.AsInteger);
-      seProgramNumber.Enabled := True;
+      seBlockNumber.Enabled := True;
       eProgName.Enabled := True;
       btBasicExport.Enabled := True;
       btBasicSave.Enabled := True;
@@ -491,7 +495,7 @@ begin
   btBasicLoad.Enabled := False;
   btBasicSave.Enabled := False;
   btBasicLoadDesc.Enabled := False;
-  seProgramNumber.Enabled := False;
+  seBlockNumber.Enabled := False;
   eProgName.Enabled := False;
   seStepInput.Enabled := False;
   eStepNameInput.Enabled := False;
@@ -508,13 +512,13 @@ begin
       Parser.LoadDescription(odBasicCsv.FileName);
     end;
   finally
-    if Parser.Settings.NumOfProgs > 0 then
+    if Parser.Settings.NumOfBlocks > 0 then
     begin
       Desc := Parser.Description;
       cMessage.Items.Clear;
       cMessage.Items.AddStrings(Desc.Message);
       ChangeStep(seStepInput.AsInteger);
-      seProgramNumber.Enabled := True;
+      seBlockNumber.Enabled := True;
       eProgName.Enabled := True;
       btBasicExport.Enabled := True;
       btBasicSave.Enabled := True;
@@ -541,7 +545,7 @@ begin
   btBasicLoad.Enabled := False;
   btBasicSave.Enabled := False;
   btBasicLoadDesc.Enabled := False;
-  seProgramNumber.Enabled := False;
+  seBlockNumber.Enabled := False;
   eProgName.Enabled := False;
   seStepInput.Enabled := False;
   eStepNameInput.Enabled := False;
@@ -564,7 +568,7 @@ begin
     btBasicLoad.Enabled := True;
     btBasicSave.Enabled := True;
     btBasicLoadDesc.Enabled := True;
-    seProgramNumber.Enabled := True;
+    seBlockNumber.Enabled := True;
     eProgName.Enabled := True;
     seStepInput.Enabled := True;
     eStepNameInput.Enabled := True;
@@ -657,7 +661,7 @@ end;
 
 procedure TMainForm.eProgNameChange(Sender : TObject);
 begin
-  Parser.ProgramName := eProgName.Text;
+  Parser.BlockName := eProgName.Text;
 end;
 
 procedure TMainForm.eStepNameChange(Sender : TObject);
@@ -677,7 +681,7 @@ var
   Step : TStep;
   Desc : TDescription;
 begin
-  if Assigned(Parser) and (Parser.Settings.NumOfProgs > 0) then
+  if Assigned(Parser) and (Parser.Settings.NumOfBlocks > 0) then
   begin
     Step := Parser.Step[index];
     Desc := Parser.Description;
@@ -778,6 +782,8 @@ var
   STEP_TIME : Integer;
   NEXT_STEP : Integer;
   Loops : Integer;
+  STEP_MODE_ALTERNATE : Integer;
+  NEXT_STEP_ALTERNATE : Integer;
   ALARM_CONDITION : Integer;
   CONTROL_TIME : Integer;
   ALARM_STEP : Integer;
@@ -801,7 +807,9 @@ begin
   STEP_TIME := STEP_MODE + 1;
   NEXT_STEP := STEP_TIME + 1;
   Loops := NEXT_STEP + 1;
-  ALARM_CONDITION := Loops + 1;
+  STEP_MODE_ALTERNATE := Loops + 1;
+  NEXT_STEP_ALTERNATE := STEP_MODE_ALTERNATE + 1;
+  ALARM_CONDITION := NEXT_STEP_ALTERNATE + 1;
   CONTROL_TIME := ALARM_CONDITION + 1;
   ALARM_STEP := CONTROL_TIME + 1;
   MESSAGE_COLUMN := ALARM_STEP + 1;
@@ -900,6 +908,14 @@ begin
   else if Column = Loops then
   begin
     Result := IntToStr(Data.Loops);
+  end
+  else if Column = STEP_MODE_ALTERNATE then
+  begin
+    Result := cStepModeAlternate.Items[Data.NextCondAlternate];
+  end
+  else if Column = NEXT_STEP_ALTERNATE then
+  begin
+    Result := IntToStr(Data.NextStepAlternate);
   end
   else if Column = ALARM_CONDITION then
   begin
@@ -1135,6 +1151,12 @@ begin
   HeaderColumn.Text := 'Schleifen';
   HeaderColumn.Width := 28;
   HeaderColumn := vstCrosses.Header.Columns.Add;
+  HeaderColumn.Text := 'Schrittmodus Alternativ';
+  HeaderColumn.Width := 28;
+  HeaderColumn := vstCrosses.Header.Columns.Add;
+  HeaderColumn.Text := 'Alternativschritt';
+  HeaderColumn.Width := 28;
+  HeaderColumn := vstCrosses.Header.Columns.Add;
   HeaderColumn.Text := 'Überwachungsmodus';
   HeaderColumn.Width := 28;
   HeaderColumn := vstCrosses.Header.Columns.Add;
@@ -1178,8 +1200,10 @@ begin
       Data.Intervall[j] := Parser.Step[i].Intervall[j];
     end;
     Data.NextCond := Parser.Step[i].NextCond.Value;
+    Data.NextCondAlternate := Parser.Step[i].NextCondAlternate.Value;
     Data.Time := Parser.Step[i].Time.Value;
     Data.NextStep := Parser.Step[i].NextStep.Value;
+    Data.NextStepAlternate := Parser.Step[i].NextStepAlternate.Value;
     Data.Loops := Parser.Step[i].Loops.Value;
     Data.AlarmCond := Parser.Step[i].AlarmCond.Value;
     Data.ContrTime := Parser.Step[i].ContrTime.Value;
@@ -1290,22 +1314,22 @@ begin
     pnmSingleDataSet :
       begin
         Parser := TCleanProgParserSingleDatasetName.Create(Settings);
-        vstInputs.Header.Columns.Delete(3);
-        vstInputs.Header.Columns.Delete(3);
-        vstAnalogInputs.Header.Columns.Delete(3);
-        vstAnalogInputs.Header.Columns.Delete(3);
+        vstInputs.Header.Columns[3].Options := vstInputs.Header.Columns[3].Options - [coVisible];
+        vstInputs.Header.Columns[4].Options := vstInputs.Header.Columns[4].Options - [coVisible];
+        vstAnalogInputs.Header.Columns[3].Options := vstAnalogInputs.Header.Columns[3].Options - [coVisible];
+        vstAnalogInputs.Header.Columns[4].Options := vstAnalogInputs.Header.Columns[4].Options - [coVisible];
       end;
     pnmMultipleDataSets :
       begin
         Parser := TCleanProgParser.Create(Settings);
-        vstInputs.Header.Columns.Delete(3);
-        vstInputs.Header.Columns.Delete(3);
-        vstAnalogInputs.Header.Columns.Delete(3);
-        vstAnalogInputs.Header.Columns.Delete(3);
+        vstInputs.Header.Columns[3].Options := vstInputs.Header.Columns[3].Options - [coVisible];
+        vstInputs.Header.Columns[4].Options := vstInputs.Header.Columns[4].Options - [coVisible];
+        vstAnalogInputs.Header.Columns[3].Options := vstAnalogInputs.Header.Columns[3].Options - [coVisible];
+        vstAnalogInputs.Header.Columns[4].Options := vstAnalogInputs.Header.Columns[4].Options - [coVisible];
       end;
     pnmBlocks :
       begin
-        Parser := TCleanProgParserSingleDatasetName.Create(Settings);
+        Parser := TCleanProgParserBlockBased.Create(Settings);
         cStepMode.Items.Clear();
         cStepMode.Items.Add('Eingänge (UND)');
         cStepMode.Items.Add('Zeit');
@@ -1371,10 +1395,10 @@ var
 begin
   { DONE : Deaktivieren wenn kein Prog geladen }
   InsertForm := TSelectTarget.Create(Self);
-  InsertForm.MaxNumber := Parser.Settings.NumOfProgs;
+  InsertForm.MaxNumber := Parser.Settings.NumOfBlocks;
   if InsertForm.ShowModal = mrOk then
   begin
-    Parser.CopyProgram(InsertForm.SelectedNumber);
+    Parser.CopyBlock(InsertForm.SelectedNumber);
   end;
   FreeAndNil(InsertForm);
 end;
@@ -1490,7 +1514,7 @@ end;
 
 procedure TMainForm.pcPagesChanging(Sender : TObject; var AllowChange : Boolean);
 begin
-  AllowChange := Parser.Settings.NumOfProgs > 0;
+  AllowChange := Parser.Settings.NumOfBlocks > 0;
 end;
 
 procedure TMainForm.seAlarmStepChange(Sender : TObject);
@@ -1606,10 +1630,10 @@ begin
   Parser.Step[seStepInput.AsInteger] := Step;
 end;
 
-procedure TMainForm.seProgramNumberChange(Sender : TObject);
+procedure TMainForm.seBlockNumberChange(Sender : TObject);
 begin
-  Parser.SelectedProgram := seProgramNumber.AsInteger;
-  eProgName.Text := Parser.ProgramName;
+  Parser.SelectedBlock := seBlockNumber.AsInteger;
+  eProgName.Text := Parser.BlockName;
   ChangeStep(seStepInput.AsInteger);
   if pcPages.ActivePage = tsCrosses then
   begin
@@ -1762,7 +1786,7 @@ begin
         vstAnalogInputs.EditNode(Node, Column);
       2 :
         vstAnalogInputs.EditNode(Node, Column);
-              3 :
+      3 :
         vstAnalogInputs.EditNode(Node, Column);
       4 :
         vstAnalogInputs.EditNode(Node, Column);

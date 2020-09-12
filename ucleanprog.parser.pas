@@ -1,6 +1,7 @@
 unit uCleanProg.Parser;
 { TODO : Export nach Datensatzanzahl }
 { TODO : Programmnamen Export nach Datensatzanzahl Programmnamen }
+{ TODO : Threaded parsing }
 {$I Compilerswitches.inc}
 
 interface
@@ -14,7 +15,11 @@ uses
   Graphics,
   Generics.Collections,
   uCleanProg,
-  uCleanProg.Settings;
+  uCleanProg.Settings,
+    OtlCommon,
+  OtlTask,
+  OtlTaskControl,
+   OtlComm;
 
 type
 
@@ -28,6 +33,7 @@ type
     FMaxCount : Integer;
     FSendCount : Integer;
     FSelectedProgram : Integer;
+    FSelectedBlock : Integer;
     FLanguage : Integer;
     FDelimiter : Char;
     FLines : TDictionary<String, TData>;
@@ -35,6 +41,7 @@ type
     FOnSelectLangIndex : TSelectLangIndexEvent;
     FStepBuffer : TStep;
     FProgram : array of TProgram;
+    FBlock : array of TBlock;
     FDescription : array of TDescription;
     FRecipeFileName : array of TRecipeFileName;
     FEntryFolders : TStringList;
@@ -45,43 +52,42 @@ type
     procedure LoadXMLV12(XML : TXMLFile);
     procedure LoadXMLV13(XML : TXMLFile);
     procedure SendProgress();
-    procedure ParseProgName(); virtual;
-    procedure ParseStepName();
-    procedure ParseOutputMode();
-    procedure ParseInputMode();
-    procedure ParseInputModeAlternate();
-    procedure ParseInputAktiv();
-    procedure ParseInputAktivAlternate();
-    procedure ParseIntervall();
-    procedure ParsePause();
-    procedure ParseAnalogIn();
-    procedure ParseAnalogInAlternate();
-    procedure ParseAnalogMode();
-    procedure ParseAnalogModeAlternate();
-    procedure ParseAnalogOut();
-    procedure ParseAlarmStep();
-    procedure ParseAlarmCond();
-    procedure ParseNextCond();
-    procedure ParseNextCondAlternate();
-    procedure ParseContrTime();
-    procedure ParseLoops();
-    procedure ParseNextStep();
-    procedure ParseNextStepAlternate();
-    procedure ParseMessage();
-    procedure ParseStepTime();
+    procedure ParseFiles(); virtual;
+    procedure ParseBlockName(const task : IOmniTask); virtual;
+    procedure ParseStepName(const task : IOmniTask);
+    procedure ParseOutputMode(const task : IOmniTask);
+    procedure ParseInputMode(const task : IOmniTask);
+    procedure ParseInputAktiv(const task : IOmniTask);
+    procedure ParseIntervall(const task : IOmniTask);
+    procedure ParsePause(const task : IOmniTask);
+    procedure ParseAnalogIn(const task : IOmniTask);
+    procedure ParseAnalogMode(const task : IOmniTask);
+    procedure ParseAnalogOut(const task : IOmniTask);
+    procedure ParseAlarmStep(const task : IOmniTask);
+    procedure ParseAlarmCond(const task : IOmniTask);
+    procedure ParseNextCond(const task : IOmniTask);
+    procedure ParseContrTime(const task : IOmniTask);
+    procedure ParseLoops(const task : IOmniTask);
+    procedure ParseNextStep(const task : IOmniTask);
+    procedure ParseMessage(const task : IOmniTask);
+    procedure ParseStepTime(const task : IOmniTask);
     function GetStepCount : Integer;
     function GetStep(index : Integer) : TStep;
     procedure SetStep(index : Integer; const Value : TStep);
-    function GetProgramName : string;
-    procedure SetProgramName(const Value : string);
-    procedure SetSelectedProgram(const Value : Integer);
+    function GetBlockName : string;
+    procedure SetBlockName(const Value : string);
+    procedure SetSelectedBlock(const Value : Integer);
     function GetDescription : TDescription;
     procedure SetDescription(const Value : TDescription);
-    function GetSelectedProgram : Integer;
+    function GetSelectedBlock : Integer;
     function GetLanguage : Integer;
     procedure SetLanguage(const Value : Integer);
     function GetStepName(index : Integer) : string;
     procedure SetStepName(index : Integer; const Value : string);
+    function GetProgramName : string;
+    function GetSelectedProgram : Integer;
+    procedure SetProgramName(const Value : string);
+    procedure SetSelectedProgram(const Value : Integer);
   public
     constructor Create(Settings : TSettings);
     destructor Destroy(); override;
@@ -93,16 +99,18 @@ type
     procedure CutStep(Index : Integer);
     procedure LoadFromXML(FileName : string);
     procedure SaveAsXML(FileName : string);
-    procedure CopyProgram(Target : Integer);
+    procedure CopyBlock(Target : Integer);
     property Settings : TSettings read FSettings write FSettings;
     property OnProgress : TProgressEvent read FOnProgress write FOnProgress;
     property OnSelectLangIndex : TSelectLangIndexEvent read FOnSelectLangIndex write FOnSelectLangIndex;
     property StepCount : Integer read GetStepCount;
     property SelectedProgram : Integer read GetSelectedProgram write SetSelectedProgram;
+    property SelectedBlock : Integer read GetSelectedBlock write SetSelectedBlock;
     property Step[index : Integer] : TStep read GetStep write SetStep;
     property StepName[index : Integer] : string read GetStepName write SetStepName;
     property Description : TDescription read GetDescription write SetDescription;
     property ProgramName : string read GetProgramName write SetProgramName;
+    property BlockName : string read GetBlockName write SetBlockName;
     property Language : Integer read GetLanguage write SetLanguage;
     property Picture : TPicture read FPicture write FPicture;
     property PictureExtension : string read FPictureExtension write FPictureExtension;
@@ -110,9 +118,26 @@ type
 
   TCleanProgParserSingleDatasetName = class(TCleanProgParser)
   protected
-    procedure ParseProgName(); override;
+    procedure ParseBlockName(const task : IOmniTask); override;
   public
     procedure SaveFiles(Folder : String); override;
+  end;
+
+  TCleanProgParserBlockBased = class(TCleanProgParserSingleDatasetName)
+  protected
+    procedure ParseFiles(); override;
+  public
+    procedure SaveFiles(Folder : String); override;
+  protected
+    procedure ParseProgramName(const task : IOmniTask);
+    procedure ParseProgramStep(const task : IOmniTask);
+    procedure ParseInputModeAlternate(const task : IOmniTask);
+    procedure ParseInputAktivAlternate(const task : IOmniTask);
+    procedure ParseAnalogInAlternate(const task : IOmniTask);
+    procedure ParseAnalogModeAlternate(const task : IOmniTask);
+    procedure ParseNextCondAlternate(const task : IOmniTask);
+    procedure ParseNextStepAlternate(const task : IOmniTask);
+
   end;
 
 implementation
@@ -126,34 +151,68 @@ uses
 
 { TCleanProgParser }
 
-procedure TCleanProgParser.CopyProgram(Target : Integer);
+procedure TCleanProgParser.CopyBlock(Target : Integer);
 var
   i : Integer;
 begin
-  if not InRange(Target, 1, Settings.NumOfProgs) then
+  if not InRange(Target, 1, Settings.NumOfBlocks) then
   begin
     raise TCleanProgException.CreateFmt('Selected target Out of Range Min: %d, Max: %d, Is: %d',
-      [1, Settings.NumOfProgs, Target]);
+      [1, Settings.NumOfBlocks, Target]);
   end;
-  FProgram[Target - 1].Name := FProgram[FSelectedProgram].Name;
-  for i := low(FProgram[FSelectedProgram].Step) to high(FProgram[FSelectedProgram].Step) do
+  FBlock[Target - 1].Name := FBlock[FSelectedBlock].Name;
+  for i := low(FBlock[FSelectedBlock].Step) to high(FBlock[FSelectedBlock].Step) do
   begin
-    FProgram[Target - 1].Step[i] := FProgram[FSelectedProgram].Step[i].Copy;
+    FBlock[Target - 1].Step[i] := FBlock[FSelectedBlock].Step[i].Copy;
   end;
-  FProgram[Target - 1].NameFile := FProgram[FSelectedProgram].NameFile;
-  FProgram[Target - 1].StepNameFile := System.Copy(FProgram[FSelectedProgram].StepNameFile);
-  FProgram[Target - 1].OutputModeFile := FProgram[FSelectedProgram].OutputModeFile;
-  FProgram[Target - 1].InputModeFile := FProgram[FSelectedProgram].InputModeFile;
-  FProgram[Target - 1].InputAlternateModeFile := FProgram[FSelectedProgram].InputAlternateModeFile;
-  FProgram[Target - 1].InputAktivFile := FProgram[FSelectedProgram].InputAktivFile;
-  FProgram[Target - 1].InputAlternateAktivFile := FProgram[FSelectedProgram].InputAlternateAktivFile;
-  FProgram[Target - 1].IntervallFile := FProgram[FSelectedProgram].IntervallFile;
-  FProgram[Target - 1].AnalogInValueFile := FProgram[FSelectedProgram].AnalogInValueFile;
-  FProgram[Target - 1].AnalogInAlternateValueFile := FProgram[FSelectedProgram].AnalogInAlternateValueFile;
-  FProgram[Target - 1].AnalogInModeFile := FProgram[FSelectedProgram].AnalogInModeFile;
-  FProgram[Target - 1].AnalogInAlternateModeFile := FProgram[FSelectedProgram].AnalogInAlternateModeFile;
-  FProgram[Target - 1].AnalogOutFile := FProgram[FSelectedProgram].AnalogOutFile;
-  FProgram[Target - 1].ModeFile := FProgram[FSelectedProgram].ModeFile;
+  FBlock[Target - 1].NameFile := FBlock[FSelectedBlock].NameFile;
+  FBlock[Target - 1].StepNameFile := System.Copy(FBlock[FSelectedBlock].StepNameFile);
+  FBlock[Target - 1].OutputModeFile := FBlock[FSelectedBlock].OutputModeFile;
+  FBlock[Target - 1].InputModeFile := FBlock[FSelectedBlock].InputModeFile;
+  FBlock[Target - 1].InputAlternateModeFile := FBlock[FSelectedBlock].InputAlternateModeFile;
+  FBlock[Target - 1].InputAktivFile := FBlock[FSelectedBlock].InputAktivFile;
+  FBlock[Target - 1].InputAlternateAktivFile := FBlock[FSelectedBlock].InputAlternateAktivFile;
+  FBlock[Target - 1].IntervallFile := FBlock[FSelectedBlock].IntervallFile;
+  FBlock[Target - 1].AnalogInValueFile := FBlock[FSelectedBlock].AnalogInValueFile;
+  FBlock[Target - 1].AnalogInAlternateValueFile := FBlock[FSelectedBlock].AnalogInAlternateValueFile;
+  FBlock[Target - 1].AnalogInModeFile := FBlock[FSelectedBlock].AnalogInModeFile;
+  FBlock[Target - 1].AnalogInAlternateModeFile := FBlock[FSelectedBlock].AnalogInAlternateModeFile;
+  FBlock[Target - 1].AnalogOutFile := FBlock[FSelectedBlock].AnalogOutFile;
+  FBlock[Target - 1].ModeFile := FBlock[FSelectedBlock].ModeFile;
+end;
+
+procedure TCleanProgParser.ParseFiles;
+begin
+  FMaxCount := FMaxCount + Settings.NumOfBlocks + // Loops to parse block names
+    (Settings.NumOfLangs * Settings.NumOfSteps * FDataSetCount) + // Loops to parse step names
+    (2 * Settings.NumOfInputs * Settings.NumOfSteps * FDataSetCount) + // Loops to parse inputs
+    (2 * Settings.NumOfIntervalls * Settings.NumOfSteps * FDataSetCount) + // Loops to parse intervalls
+    (2 * Settings.NumOfAnalogIn * Settings.NumOfSteps * FDataSetCount) + // Loops to parse analog inputs
+    (Settings.NumOfAnalogOut * Settings.NumOfSteps * FDataSetCount) + // Loops to parse analog outputs
+    (8 * Settings.NumOfSteps * FDataSetCount) + // Loops to parse step control values
+    (Settings.NumOfOutputs * Settings.NumOfSteps * FDataSetCount); // Loops to parse outputs
+
+  FSendCount := 100;
+
+  SendProgress;
+  CreateTask(ParseBlockName).Run;
+  CreateTask(ParseStepName).Run;
+  CreateTask(ParseOutputMode).Run;
+  CreateTask(ParseInputMode).Run;
+  CreateTask(ParseInputAktiv).Run;
+  CreateTask(ParseIntervall).Run;
+  CreateTask(ParsePause).Run;
+  CreateTask(ParseAnalogIn).Run;
+  CreateTask(ParseAnalogMode).Run;
+  CreateTask(ParseAnalogOut).Run;
+  CreateTask(ParseAlarmStep).Run;
+  CreateTask(ParseAlarmCond).Run;
+  CreateTask(ParseNextCond).Run;
+  CreateTask(ParseContrTime).Run;
+  CreateTask(ParseLoops).Run;
+  CreateTask(ParseNextStep).Run;
+  CreateTask(ParseMessage).Run;
+  CreateTask(ParseStepTime).Run;
 end;
 
 procedure TCleanProgParser.LoadXMLV10(XML : TXMLFile);
@@ -164,7 +223,7 @@ var
   j : Integer;
   i : Integer;
 begin
-  FSelectedProgram := XML.Node['SelectedProgram'].Attribute['Value'];
+  FSelectedBlock := XML.Node['SelectedProgram'].Attribute['Value'];
   FLanguage := XML.Node['Language'].Attribute['Value'];
   s := XML.Node['Delimiter'].Attribute['Value'];
   FDelimiter := s[1];
@@ -236,36 +295,36 @@ begin
 
   with XML.Node['Programs'] do
   begin
-    Settings.NumOfProgs := Attributes['Count'];
-    SetLength(FProgram, Settings.NumOfProgs);
-    for i := 0 to Settings.NumOfProgs - 1 do
+    Settings.NumOfBlocks := Attributes['Count'];
+    SetLength(FBlock, Settings.NumOfBlocks);
+    for i := 0 to Settings.NumOfBlocks - 1 do
     begin
       with Node['Program_' + IntToStr(i)] do
       begin
-        FProgram[i].Name.Value := Attribute['Name'];
-        FProgram[i].Name.EntryFolder := - 1;
+        FBlock[i].Name.Value := Attribute['Name'];
+        FBlock[i].Name.EntryFolder := - 1;
         with Node['FileIndizes'] do
         begin
-          FProgram[i].NameFile := Attribute['NameFile'];
-          for j := 0 to High(FProgram[i].StepNameFile) do
+          FBlock[i].NameFile := Attribute['NameFile'];
+          for j := 0 to High(FBlock[i].StepNameFile) do
           begin
             if Attributes.IndexOf('StepNameFile_' + IntToStr(j)) <> - 1 then
             begin
-              FProgram[i].StepNameFile[j] := Attribute['StepNameFile_' + IntToStr(j)];
+              FBlock[i].StepNameFile[j] := Attribute['StepNameFile_' + IntToStr(j)];
             end;
           end;
-          FProgram[i].OutputModeFile := Attribute['OutputModeFile'];
-          FProgram[i].InputModeFile := Attribute['InputModeFile'];
-          FProgram[i].InputAlternateModeFile := Attribute['InputModeFile'];
-          FProgram[i].InputAktivFile := Attribute['InputAktivFile'];
-          FProgram[i].InputAlternateAktivFile := Attribute['InputAktivFile'];
-          FProgram[i].IntervallFile := Attribute['IntervallFile'];
-          FProgram[i].AnalogInValueFile := Attribute['AnalogInFile'];
-          FProgram[i].AnalogInAlternateValueFile := Attribute['AnalogInFile'];
-          FProgram[i].AnalogInModeFile := Attribute['AnalogInFile'];
-          FProgram[i].AnalogInAlternateModeFile := Attribute['AnalogInFile'];
-          FProgram[i].AnalogOutFile := Attribute['AnalogOutFile'];
-          FProgram[i].ModeFile := Attribute['ModeFile'];
+          FBlock[i].OutputModeFile := Attribute['OutputModeFile'];
+          FBlock[i].InputModeFile := Attribute['InputModeFile'];
+          FBlock[i].InputAlternateModeFile := Attribute['InputModeFile'];
+          FBlock[i].InputAktivFile := Attribute['InputAktivFile'];
+          FBlock[i].InputAlternateAktivFile := Attribute['InputAktivFile'];
+          FBlock[i].IntervallFile := Attribute['IntervallFile'];
+          FBlock[i].AnalogInValueFile := Attribute['AnalogInFile'];
+          FBlock[i].AnalogInAlternateValueFile := Attribute['AnalogInFile'];
+          FBlock[i].AnalogInModeFile := Attribute['AnalogInFile'];
+          FBlock[i].AnalogInAlternateModeFile := Attribute['AnalogInFile'];
+          FBlock[i].AnalogOutFile := Attribute['AnalogOutFile'];
+          FBlock[i].ModeFile := Attribute['ModeFile'];
         end;
         with Node['Steps'] do
         begin
@@ -276,36 +335,40 @@ begin
             begin
               for k := 0 to Attributes.Count - 1 do
               begin
-                FProgram[i].Step[j].Name[k].Value := Attribute['Name_' + IntToStr(k)];
-                FProgram[i].Step[j].Name[k].EntryFolder := - 1;
+                FBlock[i].Step[j].Name[k].Value := Attribute['Name_' + IntToStr(k)];
+                FBlock[i].Step[j].Name[k].EntryFolder := - 1;
               end;
 
               with Node['Conditions'] do
               begin
-                FProgram[i].Step[j].NextCond.Value := Attribute['NextCond'];
-                FProgram[i].Step[j].NextCond.EntryFolder := - 1;
-                FProgram[i].Step[j].NextStep.Value := Attribute['NextStep'];
-                FProgram[i].Step[j].NextStep.EntryFolder := - 1;
-                FProgram[i].Step[j].Time.Value := Attribute['Time'];
-                FProgram[i].Step[j].Time.EntryFolder := - 1;
-                FProgram[i].Step[j].Message.Value := Attribute['Message'];
-                FProgram[i].Step[j].Message.EntryFolder := - 1;
-                FProgram[i].Step[j].LOOPS.Value := Attribute['Loops'];
-                FProgram[i].Step[j].LOOPS.EntryFolder := - 1;
-                FProgram[i].Step[j].AlarmCond.Value := Attribute['AlarmCond'];
-                FProgram[i].Step[j].AlarmCond.EntryFolder := - 1;
-                FProgram[i].Step[j].AlarmStep.Value := Attribute['AlarmStep'];
-                FProgram[i].Step[j].AlarmStep.EntryFolder := - 1;
-                FProgram[i].Step[j].ContrTime.Value := Attribute['ContrTime'];
-                FProgram[i].Step[j].ContrTime.EntryFolder := - 1;
+                FBlock[i].Step[j].NextCond.Value := Attribute['NextCond'];
+                FBlock[i].Step[j].NextCond.EntryFolder := - 1;
+                FBlock[i].Step[j].NextCondAlternate.Value := 0;
+                FBlock[i].Step[j].NextCondAlternate.EntryFolder := - 1;
+                FBlock[i].Step[j].NextStep.Value := Attribute['NextStep'];
+                FBlock[i].Step[j].NextStep.EntryFolder := - 1;
+                FBlock[i].Step[j].NextStepAlternate.Value := 0;
+                FBlock[i].Step[j].NextStepAlternate.EntryFolder := - 1;
+                FBlock[i].Step[j].Time.Value := Attribute['Time'];
+                FBlock[i].Step[j].Time.EntryFolder := - 1;
+                FBlock[i].Step[j].Message.Value := Attribute['Message'];
+                FBlock[i].Step[j].Message.EntryFolder := - 1;
+                FBlock[i].Step[j].LOOPS.Value := Attribute['Loops'];
+                FBlock[i].Step[j].LOOPS.EntryFolder := - 1;
+                FBlock[i].Step[j].AlarmCond.Value := Attribute['AlarmCond'];
+                FBlock[i].Step[j].AlarmCond.EntryFolder := - 1;
+                FBlock[i].Step[j].AlarmStep.Value := Attribute['AlarmStep'];
+                FBlock[i].Step[j].AlarmStep.EntryFolder := - 1;
+                FBlock[i].Step[j].ContrTime.Value := Attribute['ContrTime'];
+                FBlock[i].Step[j].ContrTime.EntryFolder := - 1;
               end;
 
               with Node['OutputModes'] do
               begin
                 for k := 0 to Nodes.Count - 1 do
                 begin
-                  FProgram[i].Step[j].OutputMode[k].Value := Node['OutputMode_' + IntToStr(k)].Text;
-                  FProgram[i].Step[j].OutputMode[k].EntryFolder := - 1;
+                  FBlock[i].Step[j].OutputMode[k].Value := Node['OutputMode_' + IntToStr(k)].Text;
+                  FBlock[i].Step[j].OutputMode[k].EntryFolder := - 1;
                 end;
               end;
 
@@ -315,14 +378,14 @@ begin
                 begin
                   with Node['Input_' + IntToStr(k)] do
                   begin
-                    FProgram[i].Step[j].Input[k].Default.Mode.Value := TVarData(Attribute['Mode']).VBoolean;
-                    FProgram[i].Step[j].Input[k].Default.Mode.EntryFolder := - 1;
-                    FProgram[i].Step[j].Input[k].Default.Aktiv.Value := TVarData(Attribute['Aktiv']).VBoolean;
-                    FProgram[i].Step[j].Input[k].Default.Aktiv.EntryFolder := - 1;
-                    FProgram[i].Step[j].Input[k].Alternate.Mode.Value := False;
-                    FProgram[i].Step[j].Input[k].Alternate.Mode.EntryFolder := - 1;
-                    FProgram[i].Step[j].Input[k].Alternate.Aktiv.Value := False;
-                    FProgram[i].Step[j].Input[k].Alternate.Aktiv.EntryFolder := - 1;
+                    FBlock[i].Step[j].Input[k].Default.Mode.Value := TVarData(Attribute['Mode']).VBoolean;
+                    FBlock[i].Step[j].Input[k].Default.Mode.EntryFolder := - 1;
+                    FBlock[i].Step[j].Input[k].Default.Aktiv.Value := TVarData(Attribute['Aktiv']).VBoolean;
+                    FBlock[i].Step[j].Input[k].Default.Aktiv.EntryFolder := - 1;
+                    FBlock[i].Step[j].Input[k].Alternate.Mode.Value := False;
+                    FBlock[i].Step[j].Input[k].Alternate.Mode.EntryFolder := - 1;
+                    FBlock[i].Step[j].Input[k].Alternate.Aktiv.Value := False;
+                    FBlock[i].Step[j].Input[k].Alternate.Aktiv.EntryFolder := - 1;
                   end;
                 end;
               end;
@@ -333,10 +396,10 @@ begin
                 begin
                   with Node['Intervall_' + IntToStr(k)] do
                   begin
-                    FProgram[i].Step[j].INTERVALL[k].INTERVALL.Value := Attribute['Intervall'];
-                    FProgram[i].Step[j].INTERVALL[k].INTERVALL.EntryFolder := - 1;
-                    FProgram[i].Step[j].INTERVALL[k].PAUSE.Value := Attribute['Pause'];
-                    FProgram[i].Step[j].INTERVALL[k].PAUSE.EntryFolder := - 1;
+                    FBlock[i].Step[j].INTERVALL[k].INTERVALL.Value := Attribute['Intervall'];
+                    FBlock[i].Step[j].INTERVALL[k].INTERVALL.EntryFolder := - 1;
+                    FBlock[i].Step[j].INTERVALL[k].PAUSE.Value := Attribute['Pause'];
+                    FBlock[i].Step[j].INTERVALL[k].PAUSE.EntryFolder := - 1;
                   end;
                 end;
               end;
@@ -347,14 +410,14 @@ begin
                 begin
                   with Node['AnalogIn_' + IntToStr(k)] do
                   begin
-                    FProgram[i].Step[j].AnalogIn[k].Default.Value.Value := Attribute['Value'];
-                    FProgram[i].Step[j].AnalogIn[k].Default.Value.EntryFolder := - 1;
-                    FProgram[i].Step[j].AnalogIn[k].Default.Mode.Value := Attribute['Mode'];
-                    FProgram[i].Step[j].AnalogIn[k].Default.Mode.EntryFolder := - 1;
-                    FProgram[i].Step[j].AnalogIn[k].Alternate.Value.Value := 0;
-                    FProgram[i].Step[j].AnalogIn[k].Alternate.Value.EntryFolder := - 1;
-                    FProgram[i].Step[j].AnalogIn[k].Alternate.Mode.Value := 0;
-                    FProgram[i].Step[j].AnalogIn[k].Alternate.Mode.EntryFolder := - 1;
+                    FBlock[i].Step[j].AnalogIn[k].Default.Value.Value := Attribute['Value'];
+                    FBlock[i].Step[j].AnalogIn[k].Default.Value.EntryFolder := - 1;
+                    FBlock[i].Step[j].AnalogIn[k].Default.Mode.Value := Attribute['Mode'];
+                    FBlock[i].Step[j].AnalogIn[k].Default.Mode.EntryFolder := - 1;
+                    FBlock[i].Step[j].AnalogIn[k].Alternate.Value.Value := 0;
+                    FBlock[i].Step[j].AnalogIn[k].Alternate.Value.EntryFolder := - 1;
+                    FBlock[i].Step[j].AnalogIn[k].Alternate.Mode.Value := 0;
+                    FBlock[i].Step[j].AnalogIn[k].Alternate.Mode.EntryFolder := - 1;
                   end;
                 end;
               end;
@@ -363,8 +426,8 @@ begin
               begin
                 for k := 0 to Nodes.Count - 1 do
                 begin
-                  FProgram[i].Step[j].AnalogOut[k].Value := Node['AnalogOut_' + IntToStr(k)].Text;
-                  FProgram[i].Step[j].AnalogOut[k].EntryFolder := - 1;
+                  FBlock[i].Step[j].AnalogOut[k].Value := Node['AnalogOut_' + IntToStr(k)].Text;
+                  FBlock[i].Step[j].AnalogOut[k].EntryFolder := - 1;
                 end;
               end;
 
@@ -403,7 +466,7 @@ var
   j : Integer;
   i : Integer;
 begin
-  FSelectedProgram := XML.Node['SelectedProgram'].Attribute['Value'];
+  FSelectedBlock := XML.Node['SelectedProgram'].Attribute['Value'];
   FLanguage := XML.Node['Language'].Attribute['Value'];
   s := XML.Node['Delimiter'].Attribute['Value'];
   FDelimiter := s[1];
@@ -489,36 +552,36 @@ begin
 
   with XML.Node['Programs'] do
   begin
-    Settings.NumOfProgs := Attributes['Count'];
-    SetLength(FProgram, Settings.NumOfProgs);
-    for i := 0 to Settings.NumOfProgs - 1 do
+    Settings.NumOfBlocks := Attributes['Count'];
+    SetLength(FBlock, Settings.NumOfBlocks);
+    for i := 0 to Settings.NumOfBlocks - 1 do
     begin
       with Node['Program_' + IntToStr(i)] do
       begin
-        FProgram[i].Name.Value := Attribute['Name'];
-        FProgram[i].Name.EntryFolder := Attribute['NameEntryFolder'];
+        FBlock[i].Name.Value := Attribute['Name'];
+        FBlock[i].Name.EntryFolder := Attribute['NameEntryFolder'];
         with Node['FileIndizes'] do
         begin
-          FProgram[i].NameFile := Attribute['NameFile'];
-          for j := 0 to High(FProgram[i].StepNameFile) do
+          FBlock[i].NameFile := Attribute['NameFile'];
+          for j := 0 to High(FBlock[i].StepNameFile) do
           begin
             if Attributes.IndexOf('StepNameFile_' + IntToStr(j)) <> - 1 then
             begin
-              FProgram[i].StepNameFile[j] := Attribute['StepNameFile_' + IntToStr(j)];
+              FBlock[i].StepNameFile[j] := Attribute['StepNameFile_' + IntToStr(j)];
             end;
           end;
-          FProgram[i].OutputModeFile := Attribute['OutputModeFile'];
-          FProgram[i].InputModeFile := Attribute['InputModeFile'];
-          FProgram[i].InputAlternateModeFile := Attribute['InputModeFile'];
-          FProgram[i].InputAktivFile := Attribute['InputAktivFile'];
-          FProgram[i].InputAlternateAktivFile := Attribute['InputAktivFile'];
-          FProgram[i].IntervallFile := Attribute['IntervallFile'];
-          FProgram[i].AnalogInValueFile := Attribute['AnalogInFile'];
-          FProgram[i].AnalogInAlternateValueFile := Attribute['AnalogInFile'];
-          FProgram[i].AnalogInModeFile := Attribute['AnalogInFile'];
-          FProgram[i].AnalogInAlternateModeFile := Attribute['AnalogInFile'];
-          FProgram[i].AnalogOutFile := Attribute['AnalogOutFile'];
-          FProgram[i].ModeFile := Attribute['ModeFile'];
+          FBlock[i].OutputModeFile := Attribute['OutputModeFile'];
+          FBlock[i].InputModeFile := Attribute['InputModeFile'];
+          FBlock[i].InputAlternateModeFile := Attribute['InputModeFile'];
+          FBlock[i].InputAktivFile := Attribute['InputAktivFile'];
+          FBlock[i].InputAlternateAktivFile := Attribute['InputAktivFile'];
+          FBlock[i].IntervallFile := Attribute['IntervallFile'];
+          FBlock[i].AnalogInValueFile := Attribute['AnalogInFile'];
+          FBlock[i].AnalogInAlternateValueFile := Attribute['AnalogInFile'];
+          FBlock[i].AnalogInModeFile := Attribute['AnalogInFile'];
+          FBlock[i].AnalogInAlternateModeFile := Attribute['AnalogInFile'];
+          FBlock[i].AnalogOutFile := Attribute['AnalogOutFile'];
+          FBlock[i].ModeFile := Attribute['ModeFile'];
         end;
         with Node['Steps'] do
         begin
@@ -531,8 +594,8 @@ begin
               begin
                 with Node['Name_' + IntToStr(k)] do
                 begin
-                  FProgram[i].Step[j].Name[k].Value := Attribute['Value'];
-                  FProgram[i].Step[j].Name[k].EntryFolder := Attribute['EntryFolder'];
+                  FBlock[i].Step[j].Name[k].Value := Attribute['Value'];
+                  FBlock[i].Step[j].Name[k].EntryFolder := Attribute['EntryFolder'];
                 end;
               end;
 
@@ -540,43 +603,47 @@ begin
               begin
                 with Node['NextCond'] do
                 begin
-                  FProgram[i].Step[j].NextCond.Value := Attribute['Value'];
-                  FProgram[i].Step[j].NextCond.EntryFolder := Attribute['EntryFolder'];
+                  FBlock[i].Step[j].NextCond.Value := Attribute['Value'];
+                  FBlock[i].Step[j].NextCond.EntryFolder := Attribute['EntryFolder'];
                 end;
+                FBlock[i].Step[j].NextCondAlternate.Value := 0;
+                FBlock[i].Step[j].NextCondAlternate.EntryFolder := - 1;
                 with Node['NextStep'] do
                 begin
-                  FProgram[i].Step[j].NextStep.Value := Attribute['Value'];
-                  FProgram[i].Step[j].NextStep.EntryFolder := Attribute['EntryFolder'];
+                  FBlock[i].Step[j].NextStep.Value := Attribute['Value'];
+                  FBlock[i].Step[j].NextStep.EntryFolder := Attribute['EntryFolder'];
                 end;
+                FBlock[i].Step[j].NextStepAlternate.Value := 0;
+                FBlock[i].Step[j].NextStepAlternate.EntryFolder := - 1;
                 with Node['Time'] do
                 begin
-                  FProgram[i].Step[j].Time.Value := Attribute['Value'];
-                  FProgram[i].Step[j].Time.EntryFolder := Attribute['EntryFolder'];
+                  FBlock[i].Step[j].Time.Value := Attribute['Value'];
+                  FBlock[i].Step[j].Time.EntryFolder := Attribute['EntryFolder'];
                 end;
                 with Node['Message'] do
                 begin
-                  FProgram[i].Step[j].Message.Value := Attribute['Value'];
-                  FProgram[i].Step[j].Message.EntryFolder := Attribute['EntryFolder'];
+                  FBlock[i].Step[j].Message.Value := Attribute['Value'];
+                  FBlock[i].Step[j].Message.EntryFolder := Attribute['EntryFolder'];
                 end;
                 with Node['Loops'] do
                 begin
-                  FProgram[i].Step[j].LOOPS.Value := Attribute['Value'];
-                  FProgram[i].Step[j].LOOPS.EntryFolder := Attribute['EntryFolder'];
+                  FBlock[i].Step[j].LOOPS.Value := Attribute['Value'];
+                  FBlock[i].Step[j].LOOPS.EntryFolder := Attribute['EntryFolder'];
                 end;
                 with Node['AlarmCond'] do
                 begin
-                  FProgram[i].Step[j].AlarmCond.Value := Attribute['Value'];
-                  FProgram[i].Step[j].AlarmCond.EntryFolder := Attribute['EntryFolder'];
+                  FBlock[i].Step[j].AlarmCond.Value := Attribute['Value'];
+                  FBlock[i].Step[j].AlarmCond.EntryFolder := Attribute['EntryFolder'];
                 end;
                 with Node['AlarmStep'] do
                 begin
-                  FProgram[i].Step[j].AlarmStep.Value := Attribute['Value'];
-                  FProgram[i].Step[j].AlarmStep.EntryFolder := Attribute['EntryFolder'];
+                  FBlock[i].Step[j].AlarmStep.Value := Attribute['Value'];
+                  FBlock[i].Step[j].AlarmStep.EntryFolder := Attribute['EntryFolder'];
                 end;
                 with Node['ContrTime'] do
                 begin
-                  FProgram[i].Step[j].ContrTime.Value := Attribute['Value'];
-                  FProgram[i].Step[j].ContrTime.EntryFolder := Attribute['EntryFolder'];
+                  FBlock[i].Step[j].ContrTime.Value := Attribute['Value'];
+                  FBlock[i].Step[j].ContrTime.EntryFolder := Attribute['EntryFolder'];
                 end;
               end;
 
@@ -586,8 +653,8 @@ begin
                 begin
                   with Node['OutputMode_' + IntToStr(k)] do
                   begin
-                    FProgram[i].Step[j].OutputMode[k].Value := Attribute['Value'];
-                    FProgram[i].Step[j].OutputMode[k].EntryFolder := Attribute['EntryFolder'];
+                    FBlock[i].Step[j].OutputMode[k].Value := Attribute['Value'];
+                    FBlock[i].Step[j].OutputMode[k].EntryFolder := Attribute['EntryFolder'];
                   end;
                 end;
               end;
@@ -600,17 +667,17 @@ begin
                   begin
                     with Node['Mode'] do
                     begin
-                      FProgram[i].Step[j].Input[k].Default.Mode.Value := TVarData(Attribute['Value']).VBoolean;
-                      FProgram[i].Step[j].Input[k].Default.Mode.EntryFolder := Attribute['EntryFolder'];
-                      FProgram[i].Step[j].Input[k].Alternate.Mode.Value := False;
-                      FProgram[i].Step[j].Input[k].Alternate.Mode.EntryFolder := - 1;
+                      FBlock[i].Step[j].Input[k].Default.Mode.Value := TVarData(Attribute['Value']).VBoolean;
+                      FBlock[i].Step[j].Input[k].Default.Mode.EntryFolder := Attribute['EntryFolder'];
+                      FBlock[i].Step[j].Input[k].Alternate.Mode.Value := False;
+                      FBlock[i].Step[j].Input[k].Alternate.Mode.EntryFolder := - 1;
                     end;
                     with Node['Aktiv'] do
                     begin
-                      FProgram[i].Step[j].Input[k].Default.Aktiv.Value := TVarData(Attribute['Value']).VBoolean;
-                      FProgram[i].Step[j].Input[k].Default.Aktiv.EntryFolder := Attribute['EntryFolder'];
-                      FProgram[i].Step[j].Input[k].Alternate.Aktiv.Value := False;
-                      FProgram[i].Step[j].Input[k].Alternate.Aktiv.EntryFolder := - 1;
+                      FBlock[i].Step[j].Input[k].Default.Aktiv.Value := TVarData(Attribute['Value']).VBoolean;
+                      FBlock[i].Step[j].Input[k].Default.Aktiv.EntryFolder := Attribute['EntryFolder'];
+                      FBlock[i].Step[j].Input[k].Alternate.Aktiv.Value := False;
+                      FBlock[i].Step[j].Input[k].Alternate.Aktiv.EntryFolder := - 1;
                     end;
                   end;
                 end;
@@ -624,13 +691,13 @@ begin
                   begin
                     with Node['Intervall'] do
                     begin
-                      FProgram[i].Step[j].INTERVALL[k].INTERVALL.Value := Attribute['Value'];
-                      FProgram[i].Step[j].INTERVALL[k].INTERVALL.EntryFolder := Attribute['EntryFolder'];
+                      FBlock[i].Step[j].INTERVALL[k].INTERVALL.Value := Attribute['Value'];
+                      FBlock[i].Step[j].INTERVALL[k].INTERVALL.EntryFolder := Attribute['EntryFolder'];
                     end;
                     with Node['Pause'] do
                     begin
-                      FProgram[i].Step[j].INTERVALL[k].PAUSE.Value := Attribute['Value'];
-                      FProgram[i].Step[j].INTERVALL[k].PAUSE.EntryFolder := Attribute['EntryFolder'];
+                      FBlock[i].Step[j].INTERVALL[k].PAUSE.Value := Attribute['Value'];
+                      FBlock[i].Step[j].INTERVALL[k].PAUSE.EntryFolder := Attribute['EntryFolder'];
                     end;
                   end;
                 end;
@@ -644,17 +711,17 @@ begin
                   begin
                     with Node['Value'] do
                     begin
-                      FProgram[i].Step[j].AnalogIn[k].Default.Value.Value := Attribute['Value'];
-                      FProgram[i].Step[j].AnalogIn[k].Default.Value.EntryFolder := Attribute['EntryFolder'];
-                      FProgram[i].Step[j].AnalogIn[k].Alternate.Value.Value := 0;
-                      FProgram[i].Step[j].AnalogIn[k].Alternate.Value.EntryFolder := - 1;
+                      FBlock[i].Step[j].AnalogIn[k].Default.Value.Value := Attribute['Value'];
+                      FBlock[i].Step[j].AnalogIn[k].Default.Value.EntryFolder := Attribute['EntryFolder'];
+                      FBlock[i].Step[j].AnalogIn[k].Alternate.Value.Value := 0;
+                      FBlock[i].Step[j].AnalogIn[k].Alternate.Value.EntryFolder := - 1;
                     end;
                     with Node['Mode'] do
                     begin
-                      FProgram[i].Step[j].AnalogIn[k].Default.Mode.Value := Attribute['Value'];
-                      FProgram[i].Step[j].AnalogIn[k].Default.Mode.EntryFolder := Attribute['EntryFolder'];
-                      FProgram[i].Step[j].AnalogIn[k].Alternate.Value.Value := 0;
-                      FProgram[i].Step[j].AnalogIn[k].Alternate.Value.EntryFolder := - 1;
+                      FBlock[i].Step[j].AnalogIn[k].Default.Mode.Value := Attribute['Value'];
+                      FBlock[i].Step[j].AnalogIn[k].Default.Mode.EntryFolder := Attribute['EntryFolder'];
+                      FBlock[i].Step[j].AnalogIn[k].Alternate.Value.Value := 0;
+                      FBlock[i].Step[j].AnalogIn[k].Alternate.Value.EntryFolder := - 1;
                     end;
                   end;
                 end;
@@ -666,8 +733,8 @@ begin
                 begin
                   with Node['AnalogOut_' + IntToStr(k)] do
                   begin
-                    FProgram[i].Step[j].AnalogOut[k].Value := Attribute['Value'];
-                    FProgram[i].Step[j].AnalogOut[k].EntryFolder := Attribute['EntryFolder'];
+                    FBlock[i].Step[j].AnalogOut[k].Value := Attribute['Value'];
+                    FBlock[i].Step[j].AnalogOut[k].EntryFolder := Attribute['EntryFolder'];
                   end;
                 end;
               end;
@@ -707,7 +774,7 @@ var
   j : Integer;
   i : Integer;
 begin
-  FSelectedProgram := XML.Node['SelectedProgram'].Attribute['Value'];
+  FSelectedBlock := XML.Node['SelectedProgram'].Attribute['Value'];
   FLanguage := XML.Node['Language'].Attribute['Value'];
   s := XML.Node['Delimiter'].Attribute['Value'];
   FDelimiter := s[1];
@@ -797,36 +864,36 @@ begin
 
   with XML.Node['Programs'] do
   begin
-    Settings.NumOfProgs := Attributes['Count'];
-    SetLength(FProgram, Settings.NumOfProgs);
-    for i := 0 to Settings.NumOfProgs - 1 do
+    Settings.NumOfBlocks := Attributes['Count'];
+    SetLength(FBlock, Settings.NumOfBlocks);
+    for i := 0 to Settings.NumOfBlocks - 1 do
     begin
       with Node['Program_' + IntToStr(i)] do
       begin
-        FProgram[i].Name.Value := Attribute['Name'];
-        FProgram[i].Name.EntryFolder := Attribute['NameEntryFolder'];
+        FBlock[i].Name.Value := Attribute['Name'];
+        FBlock[i].Name.EntryFolder := Attribute['NameEntryFolder'];
         with Node['FileIndizes'] do
         begin
-          FProgram[i].NameFile := Attribute['NameFile'];
-          for j := 0 to High(FProgram[i].StepNameFile) do
+          FBlock[i].NameFile := Attribute['NameFile'];
+          for j := 0 to High(FBlock[i].StepNameFile) do
           begin
             if Attributes.IndexOf('StepNameFile_' + IntToStr(j)) <> - 1 then
             begin
-              FProgram[i].StepNameFile[j] := Attribute['StepNameFile_' + IntToStr(j)];
+              FBlock[i].StepNameFile[j] := Attribute['StepNameFile_' + IntToStr(j)];
             end;
           end;
-          FProgram[i].OutputModeFile := Attribute['OutputModeFile'];
-          FProgram[i].InputModeFile := Attribute['InputModeFile'];
-          FProgram[i].InputAlternateModeFile := Attribute['InputModeFile'];
-          FProgram[i].InputAktivFile := Attribute['InputAktivFile'];
-          FProgram[i].InputAlternateAktivFile := Attribute['InputAktivFile'];
-          FProgram[i].IntervallFile := Attribute['IntervallFile'];
-          FProgram[i].AnalogInValueFile := Attribute['AnalogInFile'];
-          FProgram[i].AnalogInAlternateValueFile := Attribute['AnalogInFile'];
-          FProgram[i].AnalogInModeFile := Attribute['AnalogInFile'];
-          FProgram[i].AnalogInAlternateModeFile := Attribute['AnalogInFile'];
-          FProgram[i].AnalogOutFile := Attribute['AnalogOutFile'];
-          FProgram[i].ModeFile := Attribute['ModeFile'];
+          FBlock[i].OutputModeFile := Attribute['OutputModeFile'];
+          FBlock[i].InputModeFile := Attribute['InputModeFile'];
+          FBlock[i].InputAlternateModeFile := Attribute['InputModeFile'];
+          FBlock[i].InputAktivFile := Attribute['InputAktivFile'];
+          FBlock[i].InputAlternateAktivFile := Attribute['InputAktivFile'];
+          FBlock[i].IntervallFile := Attribute['IntervallFile'];
+          FBlock[i].AnalogInValueFile := Attribute['AnalogInFile'];
+          FBlock[i].AnalogInAlternateValueFile := Attribute['AnalogInFile'];
+          FBlock[i].AnalogInModeFile := Attribute['AnalogInFile'];
+          FBlock[i].AnalogInAlternateModeFile := Attribute['AnalogInFile'];
+          FBlock[i].AnalogOutFile := Attribute['AnalogOutFile'];
+          FBlock[i].ModeFile := Attribute['ModeFile'];
         end;
         with Node['Steps'] do
         begin
@@ -839,8 +906,8 @@ begin
               begin
                 with Node['Name_' + IntToStr(k)] do
                 begin
-                  FProgram[i].Step[j].Name[k].Value := Attribute['Value'];
-                  FProgram[i].Step[j].Name[k].EntryFolder := Attribute['EntryFolder'];
+                  FBlock[i].Step[j].Name[k].Value := Attribute['Value'];
+                  FBlock[i].Step[j].Name[k].EntryFolder := Attribute['EntryFolder'];
                 end;
               end;
 
@@ -848,43 +915,47 @@ begin
               begin
                 with Node['NextCond'] do
                 begin
-                  FProgram[i].Step[j].NextCond.Value := Attribute['Value'];
-                  FProgram[i].Step[j].NextCond.EntryFolder := Attribute['EntryFolder'];
+                  FBlock[i].Step[j].NextCond.Value := Attribute['Value'];
+                  FBlock[i].Step[j].NextCond.EntryFolder := Attribute['EntryFolder'];
                 end;
+                FBlock[i].Step[j].NextCondAlternate.Value := 0;
+                FBlock[i].Step[j].NextCondAlternate.EntryFolder := - 1;
                 with Node['NextStep'] do
                 begin
-                  FProgram[i].Step[j].NextStep.Value := Attribute['Value'];
-                  FProgram[i].Step[j].NextStep.EntryFolder := Attribute['EntryFolder'];
+                  FBlock[i].Step[j].NextStep.Value := Attribute['Value'];
+                  FBlock[i].Step[j].NextStep.EntryFolder := Attribute['EntryFolder'];
                 end;
+                FBlock[i].Step[j].NextStepAlternate.Value := 0;
+                FBlock[i].Step[j].NextStepAlternate.EntryFolder := - 1;
                 with Node['Time'] do
                 begin
-                  FProgram[i].Step[j].Time.Value := Attribute['Value'];
-                  FProgram[i].Step[j].Time.EntryFolder := Attribute['EntryFolder'];
+                  FBlock[i].Step[j].Time.Value := Attribute['Value'];
+                  FBlock[i].Step[j].Time.EntryFolder := Attribute['EntryFolder'];
                 end;
                 with Node['Message'] do
                 begin
-                  FProgram[i].Step[j].Message.Value := Attribute['Value'];
-                  FProgram[i].Step[j].Message.EntryFolder := Attribute['EntryFolder'];
+                  FBlock[i].Step[j].Message.Value := Attribute['Value'];
+                  FBlock[i].Step[j].Message.EntryFolder := Attribute['EntryFolder'];
                 end;
                 with Node['Loops'] do
                 begin
-                  FProgram[i].Step[j].LOOPS.Value := Attribute['Value'];
-                  FProgram[i].Step[j].LOOPS.EntryFolder := Attribute['EntryFolder'];
+                  FBlock[i].Step[j].LOOPS.Value := Attribute['Value'];
+                  FBlock[i].Step[j].LOOPS.EntryFolder := Attribute['EntryFolder'];
                 end;
                 with Node['AlarmCond'] do
                 begin
-                  FProgram[i].Step[j].AlarmCond.Value := Attribute['Value'];
-                  FProgram[i].Step[j].AlarmCond.EntryFolder := Attribute['EntryFolder'];
+                  FBlock[i].Step[j].AlarmCond.Value := Attribute['Value'];
+                  FBlock[i].Step[j].AlarmCond.EntryFolder := Attribute['EntryFolder'];
                 end;
                 with Node['AlarmStep'] do
                 begin
-                  FProgram[i].Step[j].AlarmStep.Value := Attribute['Value'];
-                  FProgram[i].Step[j].AlarmStep.EntryFolder := Attribute['EntryFolder'];
+                  FBlock[i].Step[j].AlarmStep.Value := Attribute['Value'];
+                  FBlock[i].Step[j].AlarmStep.EntryFolder := Attribute['EntryFolder'];
                 end;
                 with Node['ContrTime'] do
                 begin
-                  FProgram[i].Step[j].ContrTime.Value := Attribute['Value'];
-                  FProgram[i].Step[j].ContrTime.EntryFolder := Attribute['EntryFolder'];
+                  FBlock[i].Step[j].ContrTime.Value := Attribute['Value'];
+                  FBlock[i].Step[j].ContrTime.EntryFolder := Attribute['EntryFolder'];
                 end;
               end;
 
@@ -894,8 +965,8 @@ begin
                 begin
                   with Node['OutputMode_' + IntToStr(k)] do
                   begin
-                    FProgram[i].Step[j].OutputMode[k].Value := Attribute['Value'];
-                    FProgram[i].Step[j].OutputMode[k].EntryFolder := Attribute['EntryFolder'];
+                    FBlock[i].Step[j].OutputMode[k].Value := Attribute['Value'];
+                    FBlock[i].Step[j].OutputMode[k].EntryFolder := Attribute['EntryFolder'];
                   end;
                 end;
               end;
@@ -908,17 +979,17 @@ begin
                   begin
                     with Node['Mode'] do
                     begin
-                      FProgram[i].Step[j].Input[k].Default.Mode.Value := TVarData(Attribute['Value']).VBoolean;
-                      FProgram[i].Step[j].Input[k].Default.Mode.EntryFolder := Attribute['EntryFolder'];
-                      FProgram[i].Step[j].Input[k].Alternate.Mode.Value := False;
-                      FProgram[i].Step[j].Input[k].Alternate.Mode.EntryFolder := - 1;
+                      FBlock[i].Step[j].Input[k].Default.Mode.Value := TVarData(Attribute['Value']).VBoolean;
+                      FBlock[i].Step[j].Input[k].Default.Mode.EntryFolder := Attribute['EntryFolder'];
+                      FBlock[i].Step[j].Input[k].Alternate.Mode.Value := False;
+                      FBlock[i].Step[j].Input[k].Alternate.Mode.EntryFolder := - 1;
                     end;
                     with Node['Aktiv'] do
                     begin
-                      FProgram[i].Step[j].Input[k].Default.Aktiv.Value := TVarData(Attribute['Value']).VBoolean;
-                      FProgram[i].Step[j].Input[k].Default.Aktiv.EntryFolder := Attribute['EntryFolder'];
-                      FProgram[i].Step[j].Input[k].Alternate.Aktiv.Value := False;
-                      FProgram[i].Step[j].Input[k].Alternate.Aktiv.EntryFolder := - 1;
+                      FBlock[i].Step[j].Input[k].Default.Aktiv.Value := TVarData(Attribute['Value']).VBoolean;
+                      FBlock[i].Step[j].Input[k].Default.Aktiv.EntryFolder := Attribute['EntryFolder'];
+                      FBlock[i].Step[j].Input[k].Alternate.Aktiv.Value := False;
+                      FBlock[i].Step[j].Input[k].Alternate.Aktiv.EntryFolder := - 1;
                     end;
                   end;
                 end;
@@ -932,13 +1003,13 @@ begin
                   begin
                     with Node['Intervall'] do
                     begin
-                      FProgram[i].Step[j].INTERVALL[k].INTERVALL.Value := Attribute['Value'];
-                      FProgram[i].Step[j].INTERVALL[k].INTERVALL.EntryFolder := Attribute['EntryFolder'];
+                      FBlock[i].Step[j].INTERVALL[k].INTERVALL.Value := Attribute['Value'];
+                      FBlock[i].Step[j].INTERVALL[k].INTERVALL.EntryFolder := Attribute['EntryFolder'];
                     end;
                     with Node['Pause'] do
                     begin
-                      FProgram[i].Step[j].INTERVALL[k].PAUSE.Value := Attribute['Value'];
-                      FProgram[i].Step[j].INTERVALL[k].PAUSE.EntryFolder := Attribute['EntryFolder'];
+                      FBlock[i].Step[j].INTERVALL[k].PAUSE.Value := Attribute['Value'];
+                      FBlock[i].Step[j].INTERVALL[k].PAUSE.EntryFolder := Attribute['EntryFolder'];
                     end;
                   end;
                 end;
@@ -952,17 +1023,17 @@ begin
                   begin
                     with Node['Value'] do
                     begin
-                      FProgram[i].Step[j].AnalogIn[k].Default.Value.Value := Attribute['Value'];
-                      FProgram[i].Step[j].AnalogIn[k].Default.Value.EntryFolder := Attribute['EntryFolder'];
-                      FProgram[i].Step[j].AnalogIn[k].Alternate.Value.Value := 0;
-                      FProgram[i].Step[j].AnalogIn[k].Alternate.Value.EntryFolder := - 1;
+                      FBlock[i].Step[j].AnalogIn[k].Default.Value.Value := Attribute['Value'];
+                      FBlock[i].Step[j].AnalogIn[k].Default.Value.EntryFolder := Attribute['EntryFolder'];
+                      FBlock[i].Step[j].AnalogIn[k].Alternate.Value.Value := 0;
+                      FBlock[i].Step[j].AnalogIn[k].Alternate.Value.EntryFolder := - 1;
                     end;
                     with Node['Mode'] do
                     begin
-                      FProgram[i].Step[j].AnalogIn[k].Default.Mode.Value := Attribute['Value'];
-                      FProgram[i].Step[j].AnalogIn[k].Default.Mode.EntryFolder := Attribute['EntryFolder'];
-                      FProgram[i].Step[j].AnalogIn[k].Alternate.Mode.Value := 0;
-                      FProgram[i].Step[j].AnalogIn[k].Alternate.Mode.EntryFolder := - 1;
+                      FBlock[i].Step[j].AnalogIn[k].Default.Mode.Value := Attribute['Value'];
+                      FBlock[i].Step[j].AnalogIn[k].Default.Mode.EntryFolder := Attribute['EntryFolder'];
+                      FBlock[i].Step[j].AnalogIn[k].Alternate.Mode.Value := 0;
+                      FBlock[i].Step[j].AnalogIn[k].Alternate.Mode.EntryFolder := - 1;
                     end;
                   end;
                 end;
@@ -974,8 +1045,8 @@ begin
                 begin
                   with Node['AnalogOut_' + IntToStr(k)] do
                   begin
-                    FProgram[i].Step[j].AnalogOut[k].Value := Attribute['Value'];
-                    FProgram[i].Step[j].AnalogOut[k].EntryFolder := Attribute['EntryFolder'];
+                    FBlock[i].Step[j].AnalogOut[k].Value := Attribute['Value'];
+                    FBlock[i].Step[j].AnalogOut[k].EntryFolder := Attribute['EntryFolder'];
                   end;
                 end;
               end;
@@ -1015,7 +1086,7 @@ var
   j : Integer;
   i : Integer;
 begin
-  FSelectedProgram := XML.Node['SelectedProgram'].Attribute['Value'];
+  FSelectedBlock := XML.Node['SelectedProgram'].Attribute['Value'];
   FLanguage := XML.Node['Language'].Attribute['Value'];
   s := XML.Node['Delimiter'].Attribute['Value'];
   FDelimiter := s[1];
@@ -1111,44 +1182,84 @@ begin
     begin
       with Node['Program_' + IntToStr(i)] do
       begin
-        FProgram[i].Name.Value := Attribute['Name'];
-        FProgram[i].Name.EntryFolder := Attribute['NameEntryFolder'];
+        FProgram[i].Name.Value := Attributes['Name'];
+        FProgram[i].Name.EntryFolder := Attributes['EntryFolder'];
         with Node['FileIndizes'] do
         begin
-          FProgram[i].NameFile := Attribute['NameFile'];
-          for j := 0 to High(FProgram[i].StepNameFile) do
-          begin
-            if Attributes.IndexOf('StepNameFile_' + IntToStr(j)) <> - 1 then
-            begin
-              FProgram[i].StepNameFile[j] := Attribute['StepNameFile_' + IntToStr(j)];
-            end;
-          end;
-          FProgram[i].OutputModeFile := Attribute['OutputModeFile'];
-          FProgram[i].InputModeFile := Attribute['InputModeFile'];
-          FProgram[i].InputAlternateModeFile := Attribute['InputAlternateModeFile'];
-          FProgram[i].InputAktivFile := Attribute['InputAktivFile'];
-          FProgram[i].InputAlternateAktivFile := Attribute['InputAlternateAktivFile'];
-          FProgram[i].IntervallFile := Attribute['IntervallFile'];
-          FProgram[i].AnalogInValueFile := Attribute['AnalogInValueFile'];
-          FProgram[i].AnalogInAlternateValueFile := Attribute['AnalogInAlternateValueFile'];
-          FProgram[i].AnalogInModeFile := Attribute['AnalogInModeFile'];
-          FProgram[i].AnalogInAlternateModeFile := Attribute['AnalogInAlternateModeFile'];
-          FProgram[i].AnalogOutFile := Attribute['AnalogOutFile'];
-          FProgram[i].ModeFile := Attribute['ModeFile'];
+          FProgram[i].NameFile := Attributes['NameFile'];
+          FProgram[i].StepFile := Attributes['StepFile'];
         end;
         with Node['Steps'] do
         begin
+          Settings.NumOfProgSteps := Attributes['Count'];
+          SetLength(FProgram[i].Step, Settings.NumOfProgSteps);
+          for j := 0 to High(FProgram[i].Step) do
+          begin
+            with Node['Step_' + IntToStr(j)] do
+            begin
+              FProgram[i].Step[j].Value := Attributes['Value'];
+              FProgram[i].Step[j].EntryFolder := Attributes['EntryFolder'];
+            end;
+          end;
+        end;
+      end;
+    end;
+  end;
+
+  with XML.Node['Blocks'] do
+  begin
+    Settings.NumOfBlocks := Attributes['Count'];
+    SetLength(FBlock, Settings.NumOfBlocks);
+    for i := 0 to Settings.NumOfBlocks - 1 do
+    begin
+      with Node['Block_' + IntToStr(i)] do
+      begin
+        FBlock[i].Name.Value := Attribute['Name'];
+        FBlock[i].Name.EntryFolder := Attribute['EntryFolder'];
+        with Node['FileIndizes'] do
+        begin
+          FBlock[i].NameFile := Attribute['NameFile'];
+          for j := 0 to High(FBlock[i].StepNameFile) do
+          begin
+            if Attributes.IndexOf('StepNameFile_' + IntToStr(j)) <> - 1 then
+            begin
+              FBlock[i].StepNameFile[j] := Attribute['StepNameFile_' + IntToStr(j)];
+            end;
+          end;
+          FBlock[i].OutputModeFile := Attribute['OutputModeFile'];
+          FBlock[i].InputModeFile := Attribute['InputModeFile'];
+          FBlock[i].InputAlternateModeFile := Attribute['InputAlternateModeFile'];
+          FBlock[i].InputAktivFile := Attribute['InputAktivFile'];
+          FBlock[i].InputAlternateAktivFile := Attribute['InputAlternateAktivFile'];
+          FBlock[i].IntervallFile := Attribute['IntervallFile'];
+          FBlock[i].AnalogInValueFile := Attribute['AnalogInValueFile'];
+          FBlock[i].AnalogInAlternateValueFile := Attribute['AnalogInAlternateValueFile'];
+          FBlock[i].AnalogInModeFile := Attribute['AnalogInModeFile'];
+          FBlock[i].AnalogInAlternateModeFile := Attribute['AnalogInAlternateModeFile'];
+          FBlock[i].AnalogOutFile := Attribute['AnalogOutFile'];
+          FBlock[i].ModeFile := Attribute['ModeFile'];
+        end;
+        with Node['Steps'] do
+        begin
+          Settings.NumOfSteps := Attributes['Count'];
+          SetLength(FBlock[i].Step, Settings.NumOfSteps);
+          SetLength(FBlock[i].StepNameFile, Settings.NumOfLangs);
           for j := 0 to Nodes.Count - 1 do
           begin
-
-            with Node['Steps_' + IntToStr(j)] do
+            SetLength(FBlock[i].Step[j].Name, Settings.NumOfLangs);
+            SetLength(FBlock[i].Step[j].OutputMode, Settings.NumOfOutputs);
+            SetLength(FBlock[i].Step[j].Input, Settings.NumOfInputs);
+            SetLength(FBlock[i].Step[j].INTERVALL, Settings.NumOfIntervalls);
+            SetLength(FBlock[i].Step[j].AnalogIn, Settings.NumOfAnalogIn);
+            SetLength(FBlock[i].Step[j].AnalogOut, Settings.NumOfAnalogOut);
+            with Node['Step_' + IntToStr(j)] do
             begin
               for k := 0 to Settings.NumOfLangs - 1 do
               begin
                 with Node['Name_' + IntToStr(k)] do
                 begin
-                  FProgram[i].Step[j].Name[k].Value := Attribute['Value'];
-                  FProgram[i].Step[j].Name[k].EntryFolder := Attribute['EntryFolder'];
+                  FBlock[i].Step[j].Name[k].Value := Attribute['Value'];
+                  FBlock[i].Step[j].Name[k].EntryFolder := Attribute['EntryFolder'];
                 end;
               end;
 
@@ -1156,43 +1267,53 @@ begin
               begin
                 with Node['NextCond'] do
                 begin
-                  FProgram[i].Step[j].NextCond.Value := Attribute['Value'];
-                  FProgram[i].Step[j].NextCond.EntryFolder := Attribute['EntryFolder'];
+                  FBlock[i].Step[j].NextCond.Value := Attribute['Value'];
+                  FBlock[i].Step[j].NextCond.EntryFolder := Attribute['EntryFolder'];
+                end;
+                with Node['NextCondAlternate'] do
+                begin
+                  FBlock[i].Step[j].NextCondAlternate.Value := Attribute['Value'];
+                  FBlock[i].Step[j].NextCondAlternate.EntryFolder := Attribute['EntryFolder'];
                 end;
                 with Node['NextStep'] do
                 begin
-                  FProgram[i].Step[j].NextStep.Value := Attribute['Value'];
-                  FProgram[i].Step[j].NextStep.EntryFolder := Attribute['EntryFolder'];
+                  FBlock[i].Step[j].NextStep.Value := Attribute['Value'];
+                  FBlock[i].Step[j].NextStep.EntryFolder := Attribute['EntryFolder'];
+                end;
+                with Node['NextStepAlternate'] do
+                begin
+                  FBlock[i].Step[j].NextStepAlternate.Value := Attribute['Value'];
+                  FBlock[i].Step[j].NextStepAlternate.EntryFolder := Attribute['EntryFolder'];
                 end;
                 with Node['Time'] do
                 begin
-                  FProgram[i].Step[j].Time.Value := Attribute['Value'];
-                  FProgram[i].Step[j].Time.EntryFolder := Attribute['EntryFolder'];
+                  FBlock[i].Step[j].Time.Value := Attribute['Value'];
+                  FBlock[i].Step[j].Time.EntryFolder := Attribute['EntryFolder'];
                 end;
                 with Node['Message'] do
                 begin
-                  FProgram[i].Step[j].Message.Value := Attribute['Value'];
-                  FProgram[i].Step[j].Message.EntryFolder := Attribute['EntryFolder'];
+                  FBlock[i].Step[j].Message.Value := Attribute['Value'];
+                  FBlock[i].Step[j].Message.EntryFolder := Attribute['EntryFolder'];
                 end;
                 with Node['Loops'] do
                 begin
-                  FProgram[i].Step[j].LOOPS.Value := Attribute['Value'];
-                  FProgram[i].Step[j].LOOPS.EntryFolder := Attribute['EntryFolder'];
+                  FBlock[i].Step[j].LOOPS.Value := Attribute['Value'];
+                  FBlock[i].Step[j].LOOPS.EntryFolder := Attribute['EntryFolder'];
                 end;
                 with Node['AlarmCond'] do
                 begin
-                  FProgram[i].Step[j].AlarmCond.Value := Attribute['Value'];
-                  FProgram[i].Step[j].AlarmCond.EntryFolder := Attribute['EntryFolder'];
+                  FBlock[i].Step[j].AlarmCond.Value := Attribute['Value'];
+                  FBlock[i].Step[j].AlarmCond.EntryFolder := Attribute['EntryFolder'];
                 end;
                 with Node['AlarmStep'] do
                 begin
-                  FProgram[i].Step[j].AlarmStep.Value := Attribute['Value'];
-                  FProgram[i].Step[j].AlarmStep.EntryFolder := Attribute['EntryFolder'];
+                  FBlock[i].Step[j].AlarmStep.Value := Attribute['Value'];
+                  FBlock[i].Step[j].AlarmStep.EntryFolder := Attribute['EntryFolder'];
                 end;
                 with Node['ContrTime'] do
                 begin
-                  FProgram[i].Step[j].ContrTime.Value := Attribute['Value'];
-                  FProgram[i].Step[j].ContrTime.EntryFolder := Attribute['EntryFolder'];
+                  FBlock[i].Step[j].ContrTime.Value := Attribute['Value'];
+                  FBlock[i].Step[j].ContrTime.EntryFolder := Attribute['EntryFolder'];
                 end;
               end;
 
@@ -1202,8 +1323,8 @@ begin
                 begin
                   with Node['OutputMode_' + IntToStr(k)] do
                   begin
-                    FProgram[i].Step[j].OutputMode[k].Value := Attribute['Value'];
-                    FProgram[i].Step[j].OutputMode[k].EntryFolder := Attribute['EntryFolder'];
+                    FBlock[i].Step[j].OutputMode[k].Value := Attribute['Value'];
+                    FBlock[i].Step[j].OutputMode[k].EntryFolder := Attribute['EntryFolder'];
                   end;
                 end;
               end;
@@ -1218,26 +1339,26 @@ begin
                     begin
                       with Node['Mode'] do
                       begin
-                        FProgram[i].Step[j].Input[k].Default.Mode.Value := TVarData(Attribute['Value']).VBoolean;
-                        FProgram[i].Step[j].Input[k].Default.Mode.EntryFolder := Attribute['EntryFolder'];
+                        FBlock[i].Step[j].Input[k].Default.Mode.Value := TVarData(Attribute['Value']).VBoolean;
+                        FBlock[i].Step[j].Input[k].Default.Mode.EntryFolder := Attribute['EntryFolder'];
                       end;
                       with Node['Aktiv'] do
                       begin
-                        FProgram[i].Step[j].Input[k].Default.Aktiv.Value := TVarData(Attribute['Value']).VBoolean;
-                        FProgram[i].Step[j].Input[k].Default.Aktiv.EntryFolder := Attribute['EntryFolder'];
+                        FBlock[i].Step[j].Input[k].Default.Aktiv.Value := TVarData(Attribute['Value']).VBoolean;
+                        FBlock[i].Step[j].Input[k].Default.Aktiv.EntryFolder := Attribute['EntryFolder'];
                       end;
                     end;
                     with Node['Alternate'] do
                     begin
                       with Node['Mode'] do
                       begin
-                        FProgram[i].Step[j].Input[k].Alternate.Mode.Value := TVarData(Attribute['Value']).VBoolean;
-                        FProgram[i].Step[j].Input[k].Alternate.Mode.EntryFolder := Attribute['EntryFolder'];
+                        FBlock[i].Step[j].Input[k].Alternate.Mode.Value := TVarData(Attribute['Value']).VBoolean;
+                        FBlock[i].Step[j].Input[k].Alternate.Mode.EntryFolder := Attribute['EntryFolder'];
                       end;
                       with Node['Aktiv'] do
                       begin
-                        FProgram[i].Step[j].Input[k].Alternate.Aktiv.Value := TVarData(Attribute['Value']).VBoolean;
-                        FProgram[i].Step[j].Input[k].Alternate.Aktiv.EntryFolder := Attribute['EntryFolder'];
+                        FBlock[i].Step[j].Input[k].Alternate.Aktiv.Value := TVarData(Attribute['Value']).VBoolean;
+                        FBlock[i].Step[j].Input[k].Alternate.Aktiv.EntryFolder := Attribute['EntryFolder'];
                       end;
                     end;
                   end;
@@ -1252,13 +1373,13 @@ begin
                   begin
                     with Node['Intervall'] do
                     begin
-                      FProgram[i].Step[j].INTERVALL[k].INTERVALL.Value := Attribute['Value'];
-                      FProgram[i].Step[j].INTERVALL[k].INTERVALL.EntryFolder := Attribute['EntryFolder'];
+                      FBlock[i].Step[j].INTERVALL[k].INTERVALL.Value := Attribute['Value'];
+                      FBlock[i].Step[j].INTERVALL[k].INTERVALL.EntryFolder := Attribute['EntryFolder'];
                     end;
                     with Node['Pause'] do
                     begin
-                      FProgram[i].Step[j].INTERVALL[k].PAUSE.Value := Attribute['Value'];
-                      FProgram[i].Step[j].INTERVALL[k].PAUSE.EntryFolder := Attribute['EntryFolder'];
+                      FBlock[i].Step[j].INTERVALL[k].PAUSE.Value := Attribute['Value'];
+                      FBlock[i].Step[j].INTERVALL[k].PAUSE.EntryFolder := Attribute['EntryFolder'];
                     end;
                   end;
                 end;
@@ -1274,26 +1395,26 @@ begin
                     begin
                       with Node['Value'] do
                       begin
-                        FProgram[i].Step[j].AnalogIn[k].Default.Value.Value := Attribute['Value'];
-                        FProgram[i].Step[j].AnalogIn[k].Default.Value.EntryFolder := Attribute['EntryFolder'];
+                        FBlock[i].Step[j].AnalogIn[k].Default.Value.Value := Attribute['Value'];
+                        FBlock[i].Step[j].AnalogIn[k].Default.Value.EntryFolder := Attribute['EntryFolder'];
                       end;
                       with Node['Mode'] do
                       begin
-                        FProgram[i].Step[j].AnalogIn[k].Default.Mode.Value := Attribute['Value'];
-                        FProgram[i].Step[j].AnalogIn[k].Default.Mode.EntryFolder := Attribute['EntryFolder'];
+                        FBlock[i].Step[j].AnalogIn[k].Default.Mode.Value := Attribute['Value'];
+                        FBlock[i].Step[j].AnalogIn[k].Default.Mode.EntryFolder := Attribute['EntryFolder'];
                       end;
                     end;
                     with Node['Alternate'] do
                     begin
                       with Node['Value'] do
                       begin
-                        FProgram[i].Step[j].AnalogIn[k].Alternate.Value.Value := Attribute['Value'];
-                        FProgram[i].Step[j].AnalogIn[k].Alternate.Value.EntryFolder := Attribute['EntryFolder'];
+                        FBlock[i].Step[j].AnalogIn[k].Alternate.Value.Value := Attribute['Value'];
+                        FBlock[i].Step[j].AnalogIn[k].Alternate.Value.EntryFolder := Attribute['EntryFolder'];
                       end;
                       with Node['Mode'] do
                       begin
-                        FProgram[i].Step[j].AnalogIn[k].Alternate.Mode.Value := Attribute['Value'];
-                        FProgram[i].Step[j].AnalogIn[k].Alternate.Mode.EntryFolder := Attribute['EntryFolder'];
+                        FBlock[i].Step[j].AnalogIn[k].Alternate.Mode.Value := Attribute['Value'];
+                        FBlock[i].Step[j].AnalogIn[k].Alternate.Mode.EntryFolder := Attribute['EntryFolder'];
                       end;
                     end;
                   end;
@@ -1306,8 +1427,8 @@ begin
                 begin
                   with Node['AnalogOut_' + IntToStr(k)] do
                   begin
-                    FProgram[i].Step[j].AnalogOut[k].Value := Attribute['Value'];
-                    FProgram[i].Step[j].AnalogOut[k].EntryFolder := Attribute['EntryFolder'];
+                    FBlock[i].Step[j].AnalogOut[k].Value := Attribute['Value'];
+                    FBlock[i].Step[j].AnalogOut[k].EntryFolder := Attribute['EntryFolder'];
                   end;
                 end;
               end;
@@ -1341,7 +1462,7 @@ end;
 
 procedure TCleanProgParser.CopyStep(Index : Integer);
 begin
-  FStepBuffer := FProgram[FSelectedProgram].Step[Index].Copy;
+  FStepBuffer := FBlock[FSelectedBlock].Step[Index].Copy;
 end;
 
 constructor TCleanProgParser.Create(Settings : TSettings);
@@ -1354,17 +1475,23 @@ begin
   SetLength(FProgram, Settings.NumOfProgs);
   for i := 0 to Settings.NumOfProgs - 1 do
   begin
-    SetLength(FProgram[i].Step, Settings.NumOfSteps);
+    SetLength(FProgram[i].Step, Settings.NumOfProgSteps);
+  end;
+
+  SetLength(FBlock, Settings.NumOfBlocks);
+  for i := 0 to Settings.NumOfBlocks - 1 do
+  begin
+    SetLength(FBlock[i].Step, Settings.NumOfSteps);
     for j := 0 to Settings.NumOfSteps - 1 do
     begin
-      SetLength(FProgram[i].Step[j].Name, Settings.NumOfLangs);
-      SetLength(FProgram[i].Step[j].OutputMode, Settings.NumOfOutputs);
-      SetLength(FProgram[i].Step[j].Input, Settings.NumOfInputs);
-      SetLength(FProgram[i].Step[j].INTERVALL, Settings.NumOfIntervalls);
-      SetLength(FProgram[i].Step[j].AnalogIn, Settings.NumOfAnalogIn);
-      SetLength(FProgram[i].Step[j].AnalogOut, Settings.NumOfAnalogOut);
+      SetLength(FBlock[i].Step[j].Name, Settings.NumOfLangs);
+      SetLength(FBlock[i].Step[j].OutputMode, Settings.NumOfOutputs);
+      SetLength(FBlock[i].Step[j].Input, Settings.NumOfInputs);
+      SetLength(FBlock[i].Step[j].INTERVALL, Settings.NumOfIntervalls);
+      SetLength(FBlock[i].Step[j].AnalogIn, Settings.NumOfAnalogIn);
+      SetLength(FBlock[i].Step[j].AnalogOut, Settings.NumOfAnalogOut);
     end;
-    SetLength(FProgram[i].StepNameFile, Settings.NumOfLangs);
+    SetLength(FBlock[i].StepNameFile, Settings.NumOfLangs);
   end;
 
   SetLength(FRecipeFileName, Settings.NumOfFiles);
@@ -1389,20 +1516,20 @@ procedure TCleanProgParser.CutStep(Index : Integer);
 var
   i : Integer;
 begin
-  FStepBuffer := FProgram[FSelectedProgram].Step[Index].Copy;
+  FStepBuffer := FBlock[FSelectedBlock].Step[Index].Copy;
   for i := Index to Settings.NumOfSteps - 2 do
   begin
-    FProgram[FSelectedProgram].Step[i] := FProgram[FSelectedProgram].Step[i + 1];
+    FBlock[FSelectedBlock].Step[i] := FBlock[FSelectedBlock].Step[i + 1];
   end;
   for i := 0 to Settings.NumOfSteps - 1 do
   begin
-    if FProgram[FSelectedProgram].Step[i].NextStep.Value > Index then
+    if FBlock[FSelectedBlock].Step[i].NextStep.Value > Index then
     begin
-      Dec(FProgram[FSelectedProgram].Step[i].NextStep.Value);
+      Dec(FBlock[FSelectedBlock].Step[i].NextStep.Value);
     end;
-    if FProgram[FSelectedProgram].Step[i].AlarmStep.Value > Index then
+    if FBlock[FSelectedBlock].Step[i].AlarmStep.Value > Index then
     begin
-      Dec(FProgram[FSelectedProgram].Step[i].AlarmStep.Value);
+      Dec(FBlock[FSelectedBlock].Step[i].AlarmStep.Value);
     end;
   end;
 end;
@@ -1470,6 +1597,23 @@ begin
   end;
 end;
 
+function TCleanProgParser.GetBlockName : string;
+begin
+  if InRange(FSelectedBlock, 0, Settings.NumOfBlocks - 1) then
+  begin
+    Result := FBlock[FSelectedBlock].Name.Value;
+  end
+  else
+  begin
+    Result := '';
+  end;
+end;
+
+function TCleanProgParser.GetSelectedBlock : Integer;
+begin
+  Result := FSelectedBlock + 1;
+end;
+
 function TCleanProgParser.GetSelectedProgram : Integer;
 begin
   Result := FSelectedProgram + 1;
@@ -1482,9 +1626,9 @@ begin
     raise TCleanProgException.CreateFmt('Selected Step Out of Range Min: %d, Max: %d, Is: %d maybe configuration error',
       [0, Settings.NumOfSteps - 1, index]);
   end;
-  if InRange(FSelectedProgram, 0, Settings.NumOfProgs - 1) then
+  if InRange(FSelectedBlock, 0, Settings.NumOfBlocks - 1) then
   begin
-    Result := FProgram[FSelectedProgram].Step[index];
+    Result := FBlock[FSelectedBlock].Step[index];
   end;
 end;
 
@@ -1495,7 +1639,7 @@ end;
 
 function TCleanProgParser.GetStepName(index : Integer) : string;
 begin
-  Result := FProgram[FSelectedProgram].Step[Index].Name[FLanguage].Value;
+  Result := FBlock[FSelectedBlock].Step[Index].Name[FLanguage].Value;
 end;
 
 procedure TCleanProgParser.InsertStep(Index : Integer);
@@ -1504,20 +1648,20 @@ var
 begin
   for i := Settings.NumOfSteps - 2 downto Index do
   begin
-    FProgram[FSelectedProgram].Step[i + 1] := FProgram[FSelectedProgram].Step[i];
+    FBlock[FSelectedBlock].Step[i + 1] := FBlock[FSelectedBlock].Step[i];
   end;
   for i := 0 to Settings.NumOfSteps - 1 do
   begin
-    if FProgram[FSelectedProgram].Step[i].NextStep.Value > Index then
+    if FBlock[FSelectedBlock].Step[i].NextStep.Value > Index then
     begin
-      Inc(FProgram[FSelectedProgram].Step[i].NextStep.Value);
+      Inc(FBlock[FSelectedBlock].Step[i].NextStep.Value);
     end;
-    if FProgram[FSelectedProgram].Step[i].AlarmStep.Value > Index then
+    if FBlock[FSelectedBlock].Step[i].AlarmStep.Value > Index then
     begin
-      Inc(FProgram[FSelectedProgram].Step[i].AlarmStep.Value);
+      Inc(FBlock[FSelectedBlock].Step[i].AlarmStep.Value);
     end;
   end;
-  FProgram[FSelectedProgram].Step[Index] := FStepBuffer.Copy;
+  FBlock[FSelectedBlock].Step[Index] := FStepBuffer.Copy;
 end;
 
 procedure TCleanProgParser.LoadDescription(DescFile : String);
@@ -1936,10 +2080,10 @@ begin
             for i := 1 to csvReader.ColumnCount - 1 do
             begin
               FormatNo := StrToIntDef(csvReader.Columns[i], 1);
-              if FormatNo > Settings.NumOfProgs then
+              if (FormatNo > Settings.NumOfBlocks) and (FormatNo > Settings.NumOfProgs) then
               begin
                 raise TCleanProgException.CreateFmt('Read Dataset Number too high Is: %d, Max: %d',
-                  [FormatNo, Settings.NumOfProgs]);
+                  [FormatNo, MAX(Settings.NumOfBlocks, Settings.NumOfProgs)]);
               end;
               ColumnFormat.Add(FormatNo);
             end;
@@ -2013,34 +2157,7 @@ begin
     LoadFile(Files.Strings[i], i);
   end;
 
-  FMaxCount := FMaxCount + FDataSetCount + (Settings.NumOfLangs * Settings.NumOfSteps * FDataSetCount) +
-    (2 * Settings.NumOfInputs * Settings.NumOfSteps * FDataSetCount) +
-    (2 * Settings.NumOfIntervalls * Settings.NumOfSteps * FDataSetCount) +
-    (2 * Settings.NumOfAnalogIn * Settings.NumOfSteps * FDataSetCount) +
-    (Settings.NumOfAnalogOut * Settings.NumOfSteps * FDataSetCount) + (8 * Settings.NumOfSteps * FDataSetCount) +
-    (Settings.NumOfOutputs * Settings.NumOfSteps * FDataSetCount);
-
-  FSendCount := 100;
-  SendProgress();
-
-  ParseProgName();
-  ParseStepName();
-  ParseOutputMode();
-  ParseInputMode();
-  ParseInputAktiv();
-  ParseIntervall();
-  ParsePause();
-  ParseAnalogIn();
-  ParseAnalogMode();
-  ParseAnalogOut();
-  ParseAlarmStep();
-  ParseAlarmCond();
-  ParseNextCond();
-  ParseContrTime();
-  ParseLoops();
-  ParseNextStep();
-  ParseMessage();
-  ParseStepTime();
+  ParseFiles();
 
   FSendCount := 100;
   FCount := FMaxCount;
@@ -2094,9 +2211,9 @@ begin
     end;
     for RawValue in Data.Data do
     begin
-      FProgram[RawValue.FormatIndex].Step[i].AlarmCond.Value := StrToIntDef(RawValue.Value, 0);
-      FProgram[RawValue.FormatIndex].Step[i].AlarmCond.EntryFolder := Data.Folder;
-      FProgram[RawValue.FormatIndex].ModeFile := Data.FileIndex;
+      FBlock[RawValue.FormatIndex].Step[i].AlarmCond.Value := StrToIntDef(RawValue.Value, 0);
+      FBlock[RawValue.FormatIndex].Step[i].AlarmCond.EntryFolder := Data.Folder;
+      FBlock[RawValue.FormatIndex].ModeFile := Data.FileIndex;
       Inc(FCount);
       SendProgress;
     end;
@@ -2119,9 +2236,9 @@ begin
     end;
     for RawValue in Data.Data do
     begin
-      FProgram[RawValue.FormatIndex].Step[i].AlarmStep.Value := StrToIntDef(RawValue.Value, 0);
-      FProgram[RawValue.FormatIndex].Step[i].AlarmStep.EntryFolder := Data.Folder;
-      FProgram[RawValue.FormatIndex].ModeFile := Data.FileIndex;
+      FBlock[RawValue.FormatIndex].Step[i].AlarmStep.Value := StrToIntDef(RawValue.Value, 0);
+      FBlock[RawValue.FormatIndex].Step[i].AlarmStep.EntryFolder := Data.Folder;
+      FBlock[RawValue.FormatIndex].ModeFile := Data.FileIndex;
       Inc(FCount);
       SendProgress;
     end;
@@ -2146,37 +2263,9 @@ begin
       end;
       for RawValue in Data.Data do
       begin
-        FProgram[RawValue.FormatIndex].Step[k].AnalogIn[i].Default.Value.Value := StrToFloat(RawValue.Value);
-        FProgram[RawValue.FormatIndex].Step[k].AnalogIn[i].Default.Value.EntryFolder := Data.Folder;
-        FProgram[RawValue.FormatIndex].AnalogInValueFile := Data.FileIndex;
-        Inc(FCount);
-        SendProgress;
-      end;
-    end;
-  end;
-end;
-
-procedure TCleanProgParser.ParseAnalogInAlternate;
-var
-  i, k : Integer;
-  s : string;
-  Data : TData;
-  RawValue : TRawValue;
-begin
-  for i := 0 to Settings.NumOfAnalogIn - 1 do
-  begin
-    for k := 0 to Settings.NumOfSteps - 1 do
-    begin
-      s := Format(Settings.AnalogInAlternate, [i + 1, k]);
-      if not FLines.TryGetValue(s, Data) then
-      begin
-        raise TCleanProgException.CreateFmt('Value %s not Found', [s]);
-      end;
-      for RawValue in Data.Data do
-      begin
-        FProgram[RawValue.FormatIndex].Step[k].AnalogIn[i].Alternate.Value.Value := StrToFloat(RawValue.Value);
-        FProgram[RawValue.FormatIndex].Step[k].AnalogIn[i].Alternate.Value.EntryFolder := Data.Folder;
-        FProgram[RawValue.FormatIndex].AnalogInAlternateValueFile := Data.FileIndex;
+        FBlock[RawValue.FormatIndex].Step[k].AnalogIn[i].Default.Value.Value := StrToFloat(RawValue.Value);
+        FBlock[RawValue.FormatIndex].Step[k].AnalogIn[i].Default.Value.EntryFolder := Data.Folder;
+        FBlock[RawValue.FormatIndex].AnalogInValueFile := Data.FileIndex;
         Inc(FCount);
         SendProgress;
       end;
@@ -2202,37 +2291,9 @@ begin
       end;
       for RawValue in Data.Data do
       begin
-        FProgram[RawValue.FormatIndex].Step[k].AnalogIn[i].Default.Mode.Value := StrToFloat(RawValue.Value);
-        FProgram[RawValue.FormatIndex].Step[k].AnalogIn[i].Default.Mode.EntryFolder := Data.Folder;
-        FProgram[RawValue.FormatIndex].AnalogInModeFile := Data.FileIndex;
-        Inc(FCount);
-        SendProgress;
-      end;
-    end;
-  end;
-end;
-
-procedure TCleanProgParser.ParseAnalogModeAlternate;
-var
-  i, k : Integer;
-  s : string;
-  Data : TData;
-  RawValue : TRawValue;
-begin
-  for i := 0 to Settings.NumOfAnalogIn - 1 do
-  begin
-    for k := 0 to Settings.NumOfSteps - 1 do
-    begin
-      s := Format(Settings.AnalogMode, [i + 1, k]);
-      if not FLines.TryGetValue(s, Data) then
-      begin
-        raise TCleanProgException.CreateFmt('Value %s not Found', [s]);
-      end;
-      for RawValue in Data.Data do
-      begin
-        FProgram[RawValue.FormatIndex].Step[k].AnalogIn[i].Alternate.Mode.Value := StrToFloat(RawValue.Value);
-        FProgram[RawValue.FormatIndex].Step[k].AnalogIn[i].Alternate.Mode.EntryFolder := Data.Folder;
-        FProgram[RawValue.FormatIndex].AnalogInAlternateModeFile := Data.FileIndex;
+        FBlock[RawValue.FormatIndex].Step[k].AnalogIn[i].Default.Mode.Value := StrToFloat(RawValue.Value);
+        FBlock[RawValue.FormatIndex].Step[k].AnalogIn[i].Default.Mode.EntryFolder := Data.Folder;
+        FBlock[RawValue.FormatIndex].AnalogInModeFile := Data.FileIndex;
         Inc(FCount);
         SendProgress;
       end;
@@ -2258,9 +2319,9 @@ begin
       end;
       for RawValue in Data.Data do
       begin
-        FProgram[RawValue.FormatIndex].Step[k].AnalogOut[i].Value := StrToFloat(RawValue.Value);
-        FProgram[RawValue.FormatIndex].Step[k].AnalogOut[i].EntryFolder := Data.Folder;
-        FProgram[RawValue.FormatIndex].AnalogOutFile := Data.FileIndex;
+        FBlock[RawValue.FormatIndex].Step[k].AnalogOut[i].Value := StrToFloat(RawValue.Value);
+        FBlock[RawValue.FormatIndex].Step[k].AnalogOut[i].EntryFolder := Data.Folder;
+        FBlock[RawValue.FormatIndex].AnalogOutFile := Data.FileIndex;
         Inc(FCount);
         SendProgress;
       end;
@@ -2284,9 +2345,9 @@ begin
     end;
     for RawValue in Data.Data do
     begin
-      FProgram[RawValue.FormatIndex].Step[i].ContrTime.Value := StrToIntDef(RawValue.Value, 0);
-      FProgram[RawValue.FormatIndex].Step[i].ContrTime.EntryFolder := Data.Folder;
-      FProgram[RawValue.FormatIndex].ModeFile := Data.FileIndex;
+      FBlock[RawValue.FormatIndex].Step[i].ContrTime.Value := StrToIntDef(RawValue.Value, 0);
+      FBlock[RawValue.FormatIndex].Step[i].ContrTime.EntryFolder := Data.Folder;
+      FBlock[RawValue.FormatIndex].ModeFile := Data.FileIndex;
       Inc(FCount);
       SendProgress;
     end;
@@ -2311,37 +2372,9 @@ begin
       end;
       for RawValue in Data.Data do
       begin
-        FProgram[RawValue.FormatIndex].Step[k].Input[i].Default.Aktiv.Value := RawValue.Value = '1';
-        FProgram[RawValue.FormatIndex].Step[k].Input[i].Default.Aktiv.EntryFolder := Data.Folder;
-        FProgram[RawValue.FormatIndex].InputAktivFile := Data.FileIndex;
-        Inc(FCount);
-        SendProgress;
-      end;
-    end;
-  end;
-end;
-
-procedure TCleanProgParser.ParseInputAktivAlternate;
-var
-  i, k : Integer;
-  s : string;
-  Data : TData;
-  RawValue : TRawValue;
-begin
-  for i := 0 to Settings.NumOfInputs - 1 do
-  begin
-    for k := 0 to Settings.NumOfSteps - 1 do
-    begin
-      s := Format(Settings.InputAktiv, [i + 1, k]);
-      if not FLines.TryGetValue(s, Data) then
-      begin
-        raise TCleanProgException.CreateFmt('Value %s not Found', [s]);
-      end;
-      for RawValue in Data.Data do
-      begin
-        FProgram[RawValue.FormatIndex].Step[k].Input[i].Alternate.Aktiv.Value := RawValue.Value = '1';
-        FProgram[RawValue.FormatIndex].Step[k].Input[i].Alternate.Aktiv.EntryFolder := Data.Folder;
-        FProgram[RawValue.FormatIndex].InputAlternateAktivFile := Data.FileIndex;
+        FBlock[RawValue.FormatIndex].Step[k].Input[i].Default.Aktiv.Value := RawValue.Value = '1';
+        FBlock[RawValue.FormatIndex].Step[k].Input[i].Default.Aktiv.EntryFolder := Data.Folder;
+        FBlock[RawValue.FormatIndex].InputAktivFile := Data.FileIndex;
         Inc(FCount);
         SendProgress;
       end;
@@ -2367,37 +2400,9 @@ begin
       end;
       for RawValue in Data.Data do
       begin
-        FProgram[RawValue.FormatIndex].Step[k].Input[i].Default.Mode.Value := RawValue.Value = '1';
-        FProgram[RawValue.FormatIndex].Step[k].Input[i].Default.Mode.EntryFolder := Data.Folder;
-        FProgram[RawValue.FormatIndex].InputModeFile := Data.FileIndex;
-        Inc(FCount);
-        SendProgress;
-      end;
-    end;
-  end;
-end;
-
-procedure TCleanProgParser.ParseInputModeAlternate;
-var
-  i, k : Integer;
-  s : string;
-  Data : TData;
-  RawValue : TRawValue;
-begin
-  for i := 0 to Settings.NumOfInputs - 1 do
-  begin
-    for k := 0 to Settings.NumOfSteps - 1 do
-    begin
-      s := Format(Settings.InputMode, [i + 1, k]);
-      if not FLines.TryGetValue(s, Data) then
-      begin
-        raise TCleanProgException.CreateFmt('Value %s not Found', [s]);
-      end;
-      for RawValue in Data.Data do
-      begin
-        FProgram[RawValue.FormatIndex].Step[k].Input[i].Alternate.Mode.Value := RawValue.Value = '1';
-        FProgram[RawValue.FormatIndex].Step[k].Input[i].Alternate.Mode.EntryFolder := Data.Folder;
-        FProgram[RawValue.FormatIndex].InputAlternateModeFile := Data.FileIndex;
+        FBlock[RawValue.FormatIndex].Step[k].Input[i].Default.Mode.Value := RawValue.Value = '1';
+        FBlock[RawValue.FormatIndex].Step[k].Input[i].Default.Mode.EntryFolder := Data.Folder;
+        FBlock[RawValue.FormatIndex].InputModeFile := Data.FileIndex;
         Inc(FCount);
         SendProgress;
       end;
@@ -2423,9 +2428,9 @@ begin
       end;
       for RawValue in Data.Data do
       begin
-        FProgram[RawValue.FormatIndex].Step[k].INTERVALL[i].INTERVALL.Value := StrToIntDef(RawValue.Value, 0);
-        FProgram[RawValue.FormatIndex].Step[k].INTERVALL[i].INTERVALL.EntryFolder := Data.Folder;
-        FProgram[RawValue.FormatIndex].IntervallFile := Data.FileIndex;
+        FBlock[RawValue.FormatIndex].Step[k].INTERVALL[i].INTERVALL.Value := StrToIntDef(RawValue.Value, 0);
+        FBlock[RawValue.FormatIndex].Step[k].INTERVALL[i].INTERVALL.EntryFolder := Data.Folder;
+        FBlock[RawValue.FormatIndex].IntervallFile := Data.FileIndex;
         Inc(FCount);
         SendProgress;
       end;
@@ -2449,9 +2454,9 @@ begin
     end;
     for RawValue in Data.Data do
     begin
-      FProgram[RawValue.FormatIndex].Step[i].LOOPS.Value := StrToIntDef(RawValue.Value, 0);
-      FProgram[RawValue.FormatIndex].Step[i].LOOPS.EntryFolder := Data.Folder;
-      FProgram[RawValue.FormatIndex].ModeFile := Data.FileIndex;
+      FBlock[RawValue.FormatIndex].Step[i].LOOPS.Value := StrToIntDef(RawValue.Value, 0);
+      FBlock[RawValue.FormatIndex].Step[i].LOOPS.EntryFolder := Data.Folder;
+      FBlock[RawValue.FormatIndex].ModeFile := Data.FileIndex;
       Inc(FCount);
       SendProgress;
     end;
@@ -2474,9 +2479,9 @@ begin
     end;
     for RawValue in Data.Data do
     begin
-      FProgram[RawValue.FormatIndex].Step[i].Message.Value := StrToIntDef(RawValue.Value, 0);
-      FProgram[RawValue.FormatIndex].Step[i].Message.EntryFolder := Data.Folder;
-      FProgram[RawValue.FormatIndex].ModeFile := Data.FileIndex;
+      FBlock[RawValue.FormatIndex].Step[i].Message.Value := StrToIntDef(RawValue.Value, 0);
+      FBlock[RawValue.FormatIndex].Step[i].Message.EntryFolder := Data.Folder;
+      FBlock[RawValue.FormatIndex].ModeFile := Data.FileIndex;
       Inc(FCount);
       SendProgress;
     end;
@@ -2499,34 +2504,9 @@ begin
     end;
     for RawValue in Data.Data do
     begin
-      FProgram[RawValue.FormatIndex].Step[i].NextCond.Value := StrToIntDef(RawValue.Value, 0);
-      FProgram[RawValue.FormatIndex].Step[i].NextCond.EntryFolder := Data.Folder;
-      FProgram[RawValue.FormatIndex].ModeFile := Data.FileIndex;
-      Inc(FCount);
-      SendProgress;
-    end;
-  end;
-end;
-
-procedure TCleanProgParser.ParseNextCondAlternate;
-var
-  i : Integer;
-  s : string;
-  Data : TData;
-  RawValue : TRawValue;
-begin
-  for i := 0 to Settings.NumOfSteps - 1 do
-  begin
-    s := Format(Settings.NextAlternateCond, [i]);
-    if not FLines.TryGetValue(s, Data) then
-    begin
-      raise TCleanProgException.CreateFmt('Value %s not Found', [s]);
-    end;
-    for RawValue in Data.Data do
-    begin
-      FProgram[RawValue.FormatIndex].Step[i].NextCondAlternate.Value := StrToIntDef(RawValue.Value, 0);
-      FProgram[RawValue.FormatIndex].Step[i].NextCondAlternate.EntryFolder := Data.Folder;
-      FProgram[RawValue.FormatIndex].ModeFile := Data.FileIndex;
+      FBlock[RawValue.FormatIndex].Step[i].NextCond.Value := StrToIntDef(RawValue.Value, 0);
+      FBlock[RawValue.FormatIndex].Step[i].NextCond.EntryFolder := Data.Folder;
+      FBlock[RawValue.FormatIndex].ModeFile := Data.FileIndex;
       Inc(FCount);
       SendProgress;
     end;
@@ -2549,34 +2529,9 @@ begin
     end;
     for RawValue in Data.Data do
     begin
-      FProgram[RawValue.FormatIndex].Step[i].NextStep.Value := StrToIntDef(RawValue.Value, 0);
-      FProgram[RawValue.FormatIndex].Step[i].NextStep.EntryFolder := Data.Folder;
-      FProgram[RawValue.FormatIndex].ModeFile := Data.FileIndex;
-      Inc(FCount);
-      SendProgress;
-    end;
-  end;
-end;
-
-procedure TCleanProgParser.ParseNextStepAlternate;
-var
-  i : Integer;
-  s : string;
-  Data : TData;
-  RawValue : TRawValue;
-begin
-  for i := 0 to Settings.NumOfSteps - 1 do
-  begin
-    s := Format(Settings.NextAlternateStep, [i]);
-    if not FLines.TryGetValue(s, Data) then
-    begin
-      raise TCleanProgException.CreateFmt('Value %s not Found', [s]);
-    end;
-    for RawValue in Data.Data do
-    begin
-      FProgram[RawValue.FormatIndex].Step[i].NextStepAlternate.Value := StrToIntDef(RawValue.Value, 0);
-      FProgram[RawValue.FormatIndex].Step[i].NextStepAlternate.EntryFolder := Data.Folder;
-      FProgram[RawValue.FormatIndex].ModeFile := Data.FileIndex;
+      FBlock[RawValue.FormatIndex].Step[i].NextStep.Value := StrToIntDef(RawValue.Value, 0);
+      FBlock[RawValue.FormatIndex].Step[i].NextStep.EntryFolder := Data.Folder;
+      FBlock[RawValue.FormatIndex].ModeFile := Data.FileIndex;
       Inc(FCount);
       SendProgress;
     end;
@@ -2601,9 +2556,9 @@ begin
       end;
       for RawValue in Data.Data do
       begin
-        FProgram[RawValue.FormatIndex].Step[k].OutputMode[i].Value := StrToIntDef(RawValue.Value, 0);
-        FProgram[RawValue.FormatIndex].Step[k].OutputMode[i].EntryFolder := Data.Folder;
-        FProgram[RawValue.FormatIndex].OutputModeFile := Data.FileIndex;
+        FBlock[RawValue.FormatIndex].Step[k].OutputMode[i].Value := StrToIntDef(RawValue.Value, 0);
+        FBlock[RawValue.FormatIndex].Step[k].OutputMode[i].EntryFolder := Data.Folder;
+        FBlock[RawValue.FormatIndex].OutputModeFile := Data.FileIndex;
         Inc(FCount);
         SendProgress;
       end;
@@ -2629,9 +2584,9 @@ begin
       end;
       for RawValue in Data.Data do
       begin
-        FProgram[RawValue.FormatIndex].Step[k].INTERVALL[i].PAUSE.Value := StrToIntDef(RawValue.Value, 0);
-        FProgram[RawValue.FormatIndex].Step[k].INTERVALL[i].PAUSE.EntryFolder := Data.Folder;
-        FProgram[RawValue.FormatIndex].IntervallFile := Data.FileIndex;
+        FBlock[RawValue.FormatIndex].Step[k].INTERVALL[i].PAUSE.Value := StrToIntDef(RawValue.Value, 0);
+        FBlock[RawValue.FormatIndex].Step[k].INTERVALL[i].PAUSE.EntryFolder := Data.Folder;
+        FBlock[RawValue.FormatIndex].IntervallFile := Data.FileIndex;
         Inc(FCount);
         SendProgress;
       end;
@@ -2639,30 +2594,30 @@ begin
   end;
 end;
 
-procedure TCleanProgParser.ParseProgName;
+procedure TCleanProgParser.ParseBlockName;
 var
   i : Integer;
   s : string;
   Data : TData;
 begin
-  for i := 0 to Settings.NumOfProgs - 1 do
+  for i := 0 to Settings.NumOfBlocks - 1 do
   begin
-    s := Format(Settings.ProgName, [i + 1]);
+    s := Format(Settings.BlockName, [i + 1]);
     if not FLines.TryGetValue(s, Data) then
     begin
       raise TCleanProgException.CreateFmt('Value %s not Found', [s]);
     end;
     if Data.Data.Count >= i + 1 then
     begin
-      FProgram[i].Name.Value := Data.Data.Items[i].Value;
-      FProgram[i].Name.EntryFolder := Data.Folder;
+      FBlock[i].Name.Value := Data.Data.Items[i].Value;
+      FBlock[i].Name.EntryFolder := Data.Folder;
     end
     else
     begin
-      FProgram[i].Name.Value := '';
-      FProgram[i].Name.EntryFolder := Data.Folder;
+      FBlock[i].Name.Value := '';
+      FBlock[i].Name.EntryFolder := Data.Folder;
     end;
-    FProgram[i].NameFile := Data.FileIndex;
+    FBlock[i].NameFile := Data.FileIndex;
     Inc(FCount);
     SendProgress;
   end;
@@ -2686,9 +2641,9 @@ begin
       end;
       for RawValue in Data.Data do
       begin
-        FProgram[RawValue.FormatIndex].Step[k].Name[i].Value := RawValue.Value;
-        FProgram[RawValue.FormatIndex].Step[k].Name[i].EntryFolder := Data.Folder;
-        FProgram[RawValue.FormatIndex].StepNameFile[i] := Data.FileIndex;
+        FBlock[RawValue.FormatIndex].Step[k].Name[i].Value := RawValue.Value;
+        FBlock[RawValue.FormatIndex].Step[k].Name[i].EntryFolder := Data.Folder;
+        FBlock[RawValue.FormatIndex].StepNameFile[i] := Data.FileIndex;
         Inc(FCount);
         SendProgress;
       end;
@@ -2712,9 +2667,9 @@ begin
     end;
     for RawValue in Data.Data do
     begin
-      FProgram[RawValue.FormatIndex].Step[i].Time.Value := StrToIntDef(RawValue.Value, 0);
-      FProgram[RawValue.FormatIndex].Step[i].Time.EntryFolder := Data.Folder;
-      FProgram[RawValue.FormatIndex].ModeFile := Data.FileIndex;
+      FBlock[RawValue.FormatIndex].Step[i].Time.Value := StrToIntDef(RawValue.Value, 0);
+      FBlock[RawValue.FormatIndex].Step[i].Time.EntryFolder := Data.Folder;
+      FBlock[RawValue.FormatIndex].ModeFile := Data.FileIndex;
       Inc(FCount);
       SendProgress;
     end;
@@ -2733,7 +2688,7 @@ begin
 
   try
     XML.RootNode.Name := 'CleanProg';
-    XML.AddNode('SelectedProgram').Attributes.Add('Value', FSelectedProgram);
+    XML.AddNode('SelectedProgram').Attributes.Add('Value', FSelectedBlock);
     XML.AddNode('Language').Attributes.Add('Value', FLanguage);
     XML.AddNode('Delimiter').Attributes.Add('Value', FDelimiter);
     XML.AddNode('FileVersion').Attributes.Add('Value', 13);
@@ -2815,46 +2770,77 @@ begin
     with XML.AddNode('Programs') do
     begin
       Attributes.Add('Count', Settings.NumOfProgs);
-      for i := 0 to High(FProgram) do
+      for i := 0 to high(FProgram) do
       begin
         with AddNode('Program_' + IntToStr(i)) do
         begin
           Attributes.Add('Name', FProgram[i].Name.Value);
-          Attributes.Add('NameEntryFolder', FProgram[i].Name.EntryFolder);
+          Attributes.Add('EntryFolder', FProgram[i].Name.EntryFolder);
           with AddNode('FileIndizes') do
           begin
             Attributes.Add('NameFile', FProgram[i].NameFile);
-            for j := 0 to High(FProgram[i].StepNameFile) do
+            Attributes.Add('StepFile', FProgram[i].StepFile);
+          end;
+          with AddNode('Steps') do
+          begin
+            Attributes.Add('Count', Settings.NumOfProgSteps);
+            for j := 0 to High(FProgram[i].Step) do
             begin
-              Attributes.Add('StepNameFile_' + IntToStr(j), FProgram[i].StepNameFile[j]);
+              with AddNode('Step_' + IntToStr(j)) do
+              begin
+                Attributes.Add('Value', FProgram[i].Step[j].Value);
+                Attributes.Add('EntryFolder', FProgram[i].Step[j].EntryFolder);
+              end;
             end;
-            Attributes.Add('OutputModeFile', FProgram[i].OutputModeFile);
-            Attributes.Add('InputModeFile', FProgram[i].InputModeFile);
-            Attributes.Add('InputAlternateModeFile', FProgram[i].InputAlternateModeFile);
-            Attributes.Add('InputAktivFile', FProgram[i].InputAktivFile);
-            Attributes.Add('InputAlternateAktivFile', FProgram[i].InputAlternateAktivFile);
-            Attributes.Add('IntervallFile', FProgram[i].IntervallFile);
-            Attributes.Add('AnalogInValueFile', FProgram[i].AnalogInValueFile);
-            Attributes.Add('AnalogInAlternateValueFile', FProgram[i].AnalogInAlternateValueFile);
-            Attributes.Add('AnalogInModeFile', FProgram[i].AnalogInModeFile);
-            Attributes.Add('AnalogInAlternateModeFile', FProgram[i].AnalogInAlternateModeFile);
-            Attributes.Add('AnalogOutFile', FProgram[i].AnalogOutFile);
-            Attributes.Add('ModeFile', FProgram[i].ModeFile);
+          end;
+        end;
+      end;
+    end;
+
+    with XML.AddNode('Blocks') do
+    begin
+      Attributes.Add('Count', Settings.NumOfBlocks);
+      for i := 0 to High(FBlock) do
+      begin
+        with AddNode('Block_' + IntToStr(i)) do
+        begin
+          Attributes.Add('Name', FBlock[i].Name.Value);
+          Attributes.Add('EntryFolder', FBlock[i].Name.EntryFolder);
+          with AddNode('FileIndizes') do
+          begin
+            Attributes.Add('NameFile', FBlock[i].NameFile);
+            for j := 0 to High(FBlock[i].StepNameFile) do
+            begin
+              Attributes.Add('StepNameFile_' + IntToStr(j), FBlock[i].StepNameFile[j]);
+            end;
+            Attributes.Add('OutputModeFile', FBlock[i].OutputModeFile);
+            Attributes.Add('InputModeFile', FBlock[i].InputModeFile);
+            Attributes.Add('InputAlternateModeFile', FBlock[i].InputAlternateModeFile);
+            Attributes.Add('InputAktivFile', FBlock[i].InputAktivFile);
+            Attributes.Add('InputAlternateAktivFile', FBlock[i].InputAlternateAktivFile);
+            Attributes.Add('IntervallFile', FBlock[i].IntervallFile);
+            Attributes.Add('AnalogInValueFile', FBlock[i].AnalogInValueFile);
+            Attributes.Add('AnalogInAlternateValueFile', FBlock[i].AnalogInAlternateValueFile);
+            Attributes.Add('AnalogInModeFile', FBlock[i].AnalogInModeFile);
+            Attributes.Add('AnalogInAlternateModeFile', FBlock[i].AnalogInAlternateModeFile);
+            Attributes.Add('AnalogOutFile', FBlock[i].AnalogOutFile);
+            Attributes.Add('ModeFile', FBlock[i].ModeFile);
           end;
 
           with AddNode('Steps') do
           begin
-            for j := 0 to High(FProgram[i].Step) do
+            Attributes.Add('Count', Settings.NumOfSteps);
+            for j := 0 to High(FBlock[i].Step) do
             begin
 
-              with AddNode('Steps_' + IntToStr(j)) do
+              with AddNode('Step_' + IntToStr(j)) do
               begin
-                for k := 0 to High(FProgram[i].Step[j].Name) do
+                for k := 0 to High(FBlock[i].Step[j].Name) do
                 begin
                   with AddNode('Name_' + IntToStr(k)) do
                   begin
-                    Attributes.Add('Value', FProgram[i].Step[j].Name[k].Value);
-                    Attributes.Add('EntryFolder', FProgram[i].Step[j].Name[k].EntryFolder);
+                    Attributes.Add('Value', FBlock[i].Step[j].Name[k].Value);
+                    Attributes.Add('EntryFolder', FBlock[i].Step[j].Name[k].EntryFolder);
                   end;
                 end;
 
@@ -2862,61 +2848,71 @@ begin
                 begin
                   with AddNode('NextCond') do
                   begin
-                    Attributes.Add('Value', FProgram[i].Step[j].NextCond.Value);
-                    Attributes.Add('EntryFolder', FProgram[i].Step[j].NextCond.EntryFolder);
+                    Attributes.Add('Value', FBlock[i].Step[j].NextCond.Value);
+                    Attributes.Add('EntryFolder', FBlock[i].Step[j].NextCond.EntryFolder);
+                  end;
+                  with AddNode('NextCondAlternate') do
+                  begin
+                    Attributes.Add('Value', FBlock[i].Step[j].NextCondAlternate.Value);
+                    Attributes.Add('EntryFolder', FBlock[i].Step[j].NextCondAlternate.EntryFolder);
                   end;
                   with AddNode('NextStep') do
                   begin
-                    Attributes.Add('Value', FProgram[i].Step[j].NextStep.Value);
-                    Attributes.Add('EntryFolder', FProgram[i].Step[j].NextStep.EntryFolder);
+                    Attributes.Add('Value', FBlock[i].Step[j].NextStep.Value);
+                    Attributes.Add('EntryFolder', FBlock[i].Step[j].NextStep.EntryFolder);
+                  end;
+                  with AddNode('NextStepAlternate') do
+                  begin
+                    Attributes.Add('Value', FBlock[i].Step[j].NextStepAlternate.Value);
+                    Attributes.Add('EntryFolder', FBlock[i].Step[j].NextStepAlternate.EntryFolder);
                   end;
                   with AddNode('Time') do
                   begin
-                    Attributes.Add('Value', FProgram[i].Step[j].Time.Value);
-                    Attributes.Add('EntryFolder', FProgram[i].Step[j].Time.EntryFolder);
+                    Attributes.Add('Value', FBlock[i].Step[j].Time.Value);
+                    Attributes.Add('EntryFolder', FBlock[i].Step[j].Time.EntryFolder);
                   end;
                   with AddNode('Message') do
                   begin
-                    Attributes.Add('Value', FProgram[i].Step[j].Message.Value);
-                    Attributes.Add('EntryFolder', FProgram[i].Step[j].Message.EntryFolder);
+                    Attributes.Add('Value', FBlock[i].Step[j].Message.Value);
+                    Attributes.Add('EntryFolder', FBlock[i].Step[j].Message.EntryFolder);
                   end;
                   with AddNode('Loops') do
                   begin
-                    Attributes.Add('Value', FProgram[i].Step[j].LOOPS.Value);
-                    Attributes.Add('EntryFolder', FProgram[i].Step[j].LOOPS.EntryFolder);
+                    Attributes.Add('Value', FBlock[i].Step[j].LOOPS.Value);
+                    Attributes.Add('EntryFolder', FBlock[i].Step[j].LOOPS.EntryFolder);
                   end;
                   with AddNode('AlarmCond') do
                   begin
-                    Attributes.Add('Value', FProgram[i].Step[j].AlarmCond.Value);
-                    Attributes.Add('EntryFolder', FProgram[i].Step[j].AlarmCond.EntryFolder);
+                    Attributes.Add('Value', FBlock[i].Step[j].AlarmCond.Value);
+                    Attributes.Add('EntryFolder', FBlock[i].Step[j].AlarmCond.EntryFolder);
                   end;
                   with AddNode('AlarmStep') do
                   begin
-                    Attributes.Add('Value', FProgram[i].Step[j].AlarmStep.Value);
-                    Attributes.Add('EntryFolder', FProgram[i].Step[j].AlarmStep.EntryFolder);
+                    Attributes.Add('Value', FBlock[i].Step[j].AlarmStep.Value);
+                    Attributes.Add('EntryFolder', FBlock[i].Step[j].AlarmStep.EntryFolder);
                   end;
                   with AddNode('ContrTime') do
                   begin
-                    Attributes.Add('Value', FProgram[i].Step[j].ContrTime.Value);
-                    Attributes.Add('EntryFolder', FProgram[i].Step[j].ContrTime.EntryFolder);
+                    Attributes.Add('Value', FBlock[i].Step[j].ContrTime.Value);
+                    Attributes.Add('EntryFolder', FBlock[i].Step[j].ContrTime.EntryFolder);
                   end;
                 end;
 
                 with AddNode('OutputModes') do
                 begin
-                  for k := 0 to High(FProgram[i].Step[j].OutputMode) do
+                  for k := 0 to High(FBlock[i].Step[j].OutputMode) do
                   begin
                     with AddNode('OutputMode_' + IntToStr(k)) do
                     begin
-                      Attributes.Add('Value', FProgram[i].Step[j].OutputMode[k].Value);
-                      Attributes.Add('EntryFolder', FProgram[i].Step[j].OutputMode[k].EntryFolder);
+                      Attributes.Add('Value', FBlock[i].Step[j].OutputMode[k].Value);
+                      Attributes.Add('EntryFolder', FBlock[i].Step[j].OutputMode[k].EntryFolder);
                     end;
                   end;
                 end;
 
                 with AddNode('Inputs') do
                 begin
-                  for k := 0 to High(FProgram[i].Step[j].Input) do
+                  for k := 0 to High(FBlock[i].Step[j].Input) do
                   begin
                     with AddNode('Input_' + IntToStr(k)) do
                     begin
@@ -2924,26 +2920,26 @@ begin
                       begin
                         with AddNode('Mode') do
                         begin
-                          Attributes.Add('Value', FProgram[i].Step[j].Input[k].Default.Mode.Value);
-                          Attributes.Add('EntryFolder', FProgram[i].Step[j].Input[k].Default.Mode.EntryFolder);
+                          Attributes.Add('Value', FBlock[i].Step[j].Input[k].Default.Mode.Value);
+                          Attributes.Add('EntryFolder', FBlock[i].Step[j].Input[k].Default.Mode.EntryFolder);
                         end;
                         with AddNode('Aktiv') do
                         begin
-                          Attributes.Add('Value', FProgram[i].Step[j].Input[k].Default.Aktiv.Value);
-                          Attributes.Add('EntryFolder', FProgram[i].Step[j].Input[k].Default.Aktiv.EntryFolder);
+                          Attributes.Add('Value', FBlock[i].Step[j].Input[k].Default.Aktiv.Value);
+                          Attributes.Add('EntryFolder', FBlock[i].Step[j].Input[k].Default.Aktiv.EntryFolder);
                         end;
                       end;
                       with AddNode('Alternate') do
                       begin
                         with AddNode('Mode') do
                         begin
-                          Attributes.Add('Value', FProgram[i].Step[j].Input[k].Alternate.Mode.Value);
-                          Attributes.Add('EntryFolder', FProgram[i].Step[j].Input[k].Alternate.Mode.EntryFolder);
+                          Attributes.Add('Value', FBlock[i].Step[j].Input[k].Alternate.Mode.Value);
+                          Attributes.Add('EntryFolder', FBlock[i].Step[j].Input[k].Alternate.Mode.EntryFolder);
                         end;
                         with AddNode('Aktiv') do
                         begin
-                          Attributes.Add('Value', FProgram[i].Step[j].Input[k].Alternate.Aktiv.Value);
-                          Attributes.Add('EntryFolder', FProgram[i].Step[j].Input[k].Alternate.Aktiv.EntryFolder);
+                          Attributes.Add('Value', FBlock[i].Step[j].Input[k].Alternate.Aktiv.Value);
+                          Attributes.Add('EntryFolder', FBlock[i].Step[j].Input[k].Alternate.Aktiv.EntryFolder);
                         end;
                       end;
                     end;
@@ -2952,19 +2948,19 @@ begin
 
                 with AddNode('Intervalls') do
                 begin
-                  for k := 0 to High(FProgram[i].Step[j].INTERVALL) do
+                  for k := 0 to High(FBlock[i].Step[j].INTERVALL) do
                   begin
                     with AddNode('Intervall_' + IntToStr(k)) do
                     begin
                       with AddNode('Intervall') do
                       begin
-                        Attributes.Add('Value', FProgram[i].Step[j].INTERVALL[k].INTERVALL.Value);
-                        Attributes.Add('EntryFolder', FProgram[i].Step[j].INTERVALL[k].INTERVALL.EntryFolder);
+                        Attributes.Add('Value', FBlock[i].Step[j].INTERVALL[k].INTERVALL.Value);
+                        Attributes.Add('EntryFolder', FBlock[i].Step[j].INTERVALL[k].INTERVALL.EntryFolder);
                       end;
                       with AddNode('Pause') do
                       begin
-                        Attributes.Add('Value', FProgram[i].Step[j].INTERVALL[k].PAUSE.Value);
-                        Attributes.Add('EntryFolder', FProgram[i].Step[j].INTERVALL[k].PAUSE.EntryFolder);
+                        Attributes.Add('Value', FBlock[i].Step[j].INTERVALL[k].PAUSE.Value);
+                        Attributes.Add('EntryFolder', FBlock[i].Step[j].INTERVALL[k].PAUSE.EntryFolder);
                       end;
                     end;
                   end;
@@ -2972,7 +2968,7 @@ begin
 
                 with AddNode('AnalogIns') do
                 begin
-                  for k := 0 to High(FProgram[i].Step[j].AnalogIn) do
+                  for k := 0 to High(FBlock[i].Step[j].AnalogIn) do
                   begin
                     with AddNode('AnalogIn_' + IntToStr(k)) do
                     begin
@@ -2980,26 +2976,26 @@ begin
                       begin
                         with AddNode('Value') do
                         begin
-                          Attributes.Add('Value', FProgram[i].Step[j].AnalogIn[k].Default.Value.Value);
-                          Attributes.Add('EntryFolder', FProgram[i].Step[j].AnalogIn[k].Default.Value.EntryFolder);
+                          Attributes.Add('Value', FBlock[i].Step[j].AnalogIn[k].Default.Value.Value);
+                          Attributes.Add('EntryFolder', FBlock[i].Step[j].AnalogIn[k].Default.Value.EntryFolder);
                         end;
                         with AddNode('Mode') do
                         begin
-                          Attributes.Add('Value', FProgram[i].Step[j].AnalogIn[k].Default.Mode.Value);
-                          Attributes.Add('EntryFolder', FProgram[i].Step[j].AnalogIn[k].Default.Mode.EntryFolder);
+                          Attributes.Add('Value', FBlock[i].Step[j].AnalogIn[k].Default.Mode.Value);
+                          Attributes.Add('EntryFolder', FBlock[i].Step[j].AnalogIn[k].Default.Mode.EntryFolder);
                         end;
                       end;
                       with AddNode('Alternate') do
                       begin
                         with AddNode('Value') do
                         begin
-                          Attributes.Add('Value', FProgram[i].Step[j].AnalogIn[k].Alternate.Value.Value);
-                          Attributes.Add('EntryFolder', FProgram[i].Step[j].AnalogIn[k].Alternate.Value.EntryFolder);
+                          Attributes.Add('Value', FBlock[i].Step[j].AnalogIn[k].Alternate.Value.Value);
+                          Attributes.Add('EntryFolder', FBlock[i].Step[j].AnalogIn[k].Alternate.Value.EntryFolder);
                         end;
                         with AddNode('Mode') do
                         begin
-                          Attributes.Add('Value', FProgram[i].Step[j].AnalogIn[k].Alternate.Mode.Value);
-                          Attributes.Add('EntryFolder', FProgram[i].Step[j].AnalogIn[k].Alternate.Mode.EntryFolder);
+                          Attributes.Add('Value', FBlock[i].Step[j].AnalogIn[k].Alternate.Mode.Value);
+                          Attributes.Add('EntryFolder', FBlock[i].Step[j].AnalogIn[k].Alternate.Mode.EntryFolder);
                         end;
                       end;
                     end;
@@ -3008,12 +3004,12 @@ begin
 
                 with AddNode('AnalogOut') do
                 begin
-                  for k := 0 to High(FProgram[i].Step[j].AnalogOut) do
+                  for k := 0 to High(FBlock[i].Step[j].AnalogOut) do
                   begin
                     with AddNode('AnalogOut_' + IntToStr(k)) do
                     begin
-                      Attributes.Add('Value', FProgram[i].Step[j].AnalogOut[k].Value);
-                      Attributes.Add('EntryFolder', FProgram[i].Step[j].AnalogOut[k].EntryFolder);
+                      Attributes.Add('Value', FBlock[i].Step[j].AnalogOut[k].Value);
+                      Attributes.Add('EntryFolder', FBlock[i].Step[j].AnalogOut[k].EntryFolder);
                     end;
                   end;
                 end;
@@ -3070,10 +3066,9 @@ const
   end;
 
 begin
-
+  lastCreated := 0;
   SetLength(RecipeFiles, Settings.NumOfFiles);
   try
-    lastCreated := 0;
     for i := 0 to Settings.NumOfFiles - 1 do
     begin
       RecipeFiles[i] := TStringList.Create;
@@ -3081,29 +3076,29 @@ begin
       RecipeFiles[i].AddStrings(FRecipeFileName[i].Header);
     end;
 
-    for i := 0 to Settings.NumOfProgs - 1 do
+    for i := 0 to Settings.NumOfBlocks - 1 do
     begin
-      s := GetEntryFolder(FProgram[i].Name.EntryFolder);
-      s := s + Format(Settings.ProgName, [i + 1]);
+      s := GetEntryFolder(FBlock[i].Name.EntryFolder);
+      s := s + Format(Settings.BlockName, [i + 1]);
       // Eigentlich nicht ganz richtig aber Flexible verlangt es so
-      for j := 0 to Settings.NumOfProgs - 1 do
+      for j := 0 to Settings.NumOfBlocks - 1 do
       begin
-        s := s + FDelimiter + FProgram[i].Name.Value;
+        s := s + FDelimiter + FBlock[i].Name.Value;
       end;
-      RecipeFiles[FProgram[i].NameFile].Add(s);
+      RecipeFiles[FBlock[i].NameFile].Add(s);
     end;
 
     for i := 0 to Settings.NumOfLangs - 1 do
     begin
       for j := 0 to Settings.NumOfSteps - 1 do
       begin
-        s := GetEntryFolder(FProgram[0].Step[j].Name[i].EntryFolder);
+        s := GetEntryFolder(FBlock[0].Step[j].Name[i].EntryFolder);
         s := s + Format(Settings.StepName, [i + 1, j]);
-        for k := 0 to Settings.NumOfProgs - 1 do
+        for k := 0 to Settings.NumOfBlocks - 1 do
         begin
-          s := s + FDelimiter + FProgram[k].Step[j].Name[i].Value;
+          s := s + FDelimiter + FBlock[k].Step[j].Name[i].Value;
         end;
-        RecipeFiles[FProgram[0].StepNameFile[i]].Add(s);
+        RecipeFiles[FBlock[0].StepNameFile[i]].Add(s);
       end;
     end;
 
@@ -3111,13 +3106,13 @@ begin
     begin
       for j := 0 to Settings.NumOfSteps - 1 do
       begin
-        s := GetEntryFolder(FProgram[0].Step[j].OutputMode[i].EntryFolder);
+        s := GetEntryFolder(FBlock[0].Step[j].OutputMode[i].EntryFolder);
         s := s + Format(Settings.OutputMode, [i + 1, j]);
-        for k := 0 to Settings.NumOfProgs - 1 do
+        for k := 0 to Settings.NumOfBlocks - 1 do
         begin
-          s := s + FDelimiter + IntToStr(FProgram[k].Step[j].OutputMode[i].Value);
+          s := s + FDelimiter + IntToStr(FBlock[k].Step[j].OutputMode[i].Value);
         end;
-        RecipeFiles[FProgram[0].OutputModeFile].Add(s);
+        RecipeFiles[FBlock[0].OutputModeFile].Add(s);
       end;
     end;
 
@@ -3125,13 +3120,13 @@ begin
     begin
       for j := 0 to Settings.NumOfSteps - 1 do
       begin
-        s := GetEntryFolder(FProgram[0].Step[j].Input[i].Default.Mode.EntryFolder);
+        s := GetEntryFolder(FBlock[0].Step[j].Input[i].Default.Mode.EntryFolder);
         s := s + Format(Settings.InputMode, [i + 1, j]);
-        for k := 0 to Settings.NumOfProgs - 1 do
+        for k := 0 to Settings.NumOfBlocks - 1 do
         begin
-          s := s + FDelimiter + cSimpleBoolStrs[FProgram[k].Step[j].Input[i].Default.Mode.Value];
+          s := s + FDelimiter + cSimpleBoolStrs[FBlock[k].Step[j].Input[i].Default.Mode.Value];
         end;
-        RecipeFiles[FProgram[0].InputModeFile].Add(s);
+        RecipeFiles[FBlock[0].InputModeFile].Add(s);
       end;
     end;
 
@@ -3139,13 +3134,13 @@ begin
     begin
       for j := 0 to Settings.NumOfSteps - 1 do
       begin
-        s := GetEntryFolder(FProgram[0].Step[j].Input[i].Alternate.Mode.EntryFolder);
+        s := GetEntryFolder(FBlock[0].Step[j].Input[i].Alternate.Mode.EntryFolder);
         s := s + Format(Settings.InputMode, [i + 1, j]);
-        for k := 0 to Settings.NumOfProgs - 1 do
+        for k := 0 to Settings.NumOfBlocks - 1 do
         begin
-          s := s + FDelimiter + cSimpleBoolStrs[FProgram[k].Step[j].Input[i].Alternate.Mode.Value];
+          s := s + FDelimiter + cSimpleBoolStrs[FBlock[k].Step[j].Input[i].Alternate.Mode.Value];
         end;
-        RecipeFiles[FProgram[0].InputAlternateModeFile].Add(s);
+        RecipeFiles[FBlock[0].InputAlternateModeFile].Add(s);
       end;
     end;
 
@@ -3153,13 +3148,13 @@ begin
     begin
       for j := 0 to Settings.NumOfSteps - 1 do
       begin
-        s := GetEntryFolder(FProgram[0].Step[j].Input[i].Default.Aktiv.EntryFolder);
+        s := GetEntryFolder(FBlock[0].Step[j].Input[i].Default.Aktiv.EntryFolder);
         s := s + Format(Settings.InputAktiv, [i + 1, j]);
-        for k := 0 to Settings.NumOfProgs - 1 do
+        for k := 0 to Settings.NumOfBlocks - 1 do
         begin
-          s := s + FDelimiter + cSimpleBoolStrs[FProgram[k].Step[j].Input[i].Default.Aktiv.Value];
+          s := s + FDelimiter + cSimpleBoolStrs[FBlock[k].Step[j].Input[i].Default.Aktiv.Value];
         end;
-        RecipeFiles[FProgram[0].InputAktivFile].Add(s);
+        RecipeFiles[FBlock[0].InputAktivFile].Add(s);
       end;
     end;
 
@@ -3167,143 +3162,143 @@ begin
     begin
       for j := 0 to Settings.NumOfSteps - 1 do
       begin
-        s := GetEntryFolder(FProgram[0].Step[j].Input[i].Alternate.Aktiv.EntryFolder);
+        s := GetEntryFolder(FBlock[0].Step[j].Input[i].Alternate.Aktiv.EntryFolder);
         s := s + Format(Settings.InputAktiv, [i + 1, j]);
-        for k := 0 to Settings.NumOfProgs - 1 do
+        for k := 0 to Settings.NumOfBlocks - 1 do
         begin
-          s := s + FDelimiter + cSimpleBoolStrs[FProgram[k].Step[j].Input[i].Alternate.Aktiv.Value];
+          s := s + FDelimiter + cSimpleBoolStrs[FBlock[k].Step[j].Input[i].Alternate.Aktiv.Value];
         end;
-        RecipeFiles[FProgram[0].InputAlternateAktivFile].Add(s);
+        RecipeFiles[FBlock[0].InputAlternateAktivFile].Add(s);
       end;
     end;
 
     for i := 0 to Settings.NumOfSteps - 1 do
     begin
-      s := GetEntryFolder(FProgram[0].Step[i].AlarmStep.EntryFolder);
+      s := GetEntryFolder(FBlock[0].Step[i].AlarmStep.EntryFolder);
       s := s + Format(Settings.AlarmStep, [i]);
-      for k := 0 to Settings.NumOfProgs - 1 do
+      for k := 0 to Settings.NumOfBlocks - 1 do
       begin
-        s := s + FDelimiter + IntToStr(FProgram[k].Step[i].AlarmStep.Value);
+        s := s + FDelimiter + IntToStr(FBlock[k].Step[i].AlarmStep.Value);
       end;
-      RecipeFiles[FProgram[0].ModeFile].Add(s);
+      RecipeFiles[FBlock[0].ModeFile].Add(s);
     end;
 
     for i := 0 to Settings.NumOfSteps - 1 do
     begin
-      s := GetEntryFolder(FProgram[0].Step[i].AlarmCond.EntryFolder);
+      s := GetEntryFolder(FBlock[0].Step[i].AlarmCond.EntryFolder);
       s := s + Format(Settings.AlarmCond, [i]);
-      for k := 0 to Settings.NumOfProgs - 1 do
+      for k := 0 to Settings.NumOfBlocks - 1 do
       begin
-        s := s + FDelimiter + IntToStr(FProgram[k].Step[i].AlarmCond.Value);
+        s := s + FDelimiter + IntToStr(FBlock[k].Step[i].AlarmCond.Value);
       end;
-      RecipeFiles[FProgram[0].ModeFile].Add(s);
+      RecipeFiles[FBlock[0].ModeFile].Add(s);
     end;
 
     for i := 0 to Settings.NumOfSteps - 1 do
     begin
-      s := GetEntryFolder(FProgram[0].Step[i].NextCond.EntryFolder);
+      s := GetEntryFolder(FBlock[0].Step[i].NextCond.EntryFolder);
       s := s + Format(Settings.NextCond, [i]);
-      for k := 0 to Settings.NumOfProgs - 1 do
+      for k := 0 to Settings.NumOfBlocks - 1 do
       begin
-        s := s + FDelimiter + IntToStr(FProgram[k].Step[i].NextCond.Value);
+        s := s + FDelimiter + IntToStr(FBlock[k].Step[i].NextCond.Value);
       end;
-      RecipeFiles[FProgram[0].ModeFile].Add(s);
+      RecipeFiles[FBlock[0].ModeFile].Add(s);
     end;
 
     for i := 0 to Settings.NumOfSteps - 1 do
     begin
-      s := GetEntryFolder(FProgram[0].Step[i].ContrTime.EntryFolder);
+      s := GetEntryFolder(FBlock[0].Step[i].ContrTime.EntryFolder);
       s := s + Format(Settings.ContrTime, [i]);
-      for k := 0 to Settings.NumOfProgs - 1 do
+      for k := 0 to Settings.NumOfBlocks - 1 do
       begin
-        s := s + FDelimiter + IntToStr(FProgram[k].Step[i].ContrTime.Value);
+        s := s + FDelimiter + IntToStr(FBlock[k].Step[i].ContrTime.Value);
       end;
-      RecipeFiles[FProgram[0].ModeFile].Add(s);
+      RecipeFiles[FBlock[0].ModeFile].Add(s);
     end;
 
     for i := 0 to Settings.NumOfIntervalls - 1 do
     begin
       for j := 0 to Settings.NumOfSteps - 1 do
       begin
-        s := GetEntryFolder(FProgram[0].Step[j].INTERVALL[i].INTERVALL.EntryFolder);
+        s := GetEntryFolder(FBlock[0].Step[j].INTERVALL[i].INTERVALL.EntryFolder);
         s := s + Format(Settings.INTERVALL, [i + 1, j]);
-        for k := 0 to Settings.NumOfProgs - 1 do
+        for k := 0 to Settings.NumOfBlocks - 1 do
         begin
-          s := s + FDelimiter + IntToStr(FProgram[k].Step[j].INTERVALL[i].INTERVALL.Value);
+          s := s + FDelimiter + IntToStr(FBlock[k].Step[j].INTERVALL[i].INTERVALL.Value);
         end;
-        RecipeFiles[FProgram[0].ModeFile].Add(s);
+        RecipeFiles[FBlock[0].ModeFile].Add(s);
       end;
     end;
 
     for i := 0 to Settings.NumOfSteps - 1 do
     begin
-      s := GetEntryFolder(FProgram[0].Step[i].LOOPS.EntryFolder);
+      s := GetEntryFolder(FBlock[0].Step[i].LOOPS.EntryFolder);
       s := s + Format(Settings.LOOPS, [i]);
-      for k := 0 to Settings.NumOfProgs - 1 do
+      for k := 0 to Settings.NumOfBlocks - 1 do
       begin
-        s := s + FDelimiter + IntToStr(FProgram[k].Step[i].LOOPS.Value);
+        s := s + FDelimiter + IntToStr(FBlock[k].Step[i].LOOPS.Value);
       end;
-      RecipeFiles[FProgram[0].ModeFile].Add(s);
+      RecipeFiles[FBlock[0].ModeFile].Add(s);
     end;
 
     for i := 0 to Settings.NumOfSteps - 1 do
     begin
-      s := GetEntryFolder(FProgram[0].Step[i].NextStep.EntryFolder);
+      s := GetEntryFolder(FBlock[0].Step[i].NextStep.EntryFolder);
       s := s + Format(Settings.NextStep, [i]);
-      for k := 0 to Settings.NumOfProgs - 1 do
+      for k := 0 to Settings.NumOfBlocks - 1 do
       begin
-        s := s + FDelimiter + IntToStr(FProgram[k].Step[i].NextStep.Value);
+        s := s + FDelimiter + IntToStr(FBlock[k].Step[i].NextStep.Value);
       end;
-      RecipeFiles[FProgram[0].ModeFile].Add(s);
+      RecipeFiles[FBlock[0].ModeFile].Add(s);
     end;
 
     for i := 0 to Settings.NumOfSteps - 1 do
     begin
-      s := GetEntryFolder(FProgram[0].Step[i].Message.EntryFolder);
+      s := GetEntryFolder(FBlock[0].Step[i].Message.EntryFolder);
       s := s + Format(Settings.MESSAGES, [i]);
-      for k := 0 to Settings.NumOfProgs - 1 do
+      for k := 0 to Settings.NumOfBlocks - 1 do
       begin
-        s := s + FDelimiter + IntToStr(FProgram[k].Step[i].Message.Value);
+        s := s + FDelimiter + IntToStr(FBlock[k].Step[i].Message.Value);
       end;
-      RecipeFiles[FProgram[0].ModeFile].Add(s);
+      RecipeFiles[FBlock[0].ModeFile].Add(s);
     end;
 
     for i := 0 to Settings.NumOfIntervalls - 1 do
     begin
       for j := 0 to Settings.NumOfSteps - 1 do
       begin
-        s := GetEntryFolder(FProgram[0].Step[j].INTERVALL[i].PAUSE.EntryFolder);
+        s := GetEntryFolder(FBlock[0].Step[j].INTERVALL[i].PAUSE.EntryFolder);
         s := s + Format(Settings.PAUSE, [i + 1, j]);
-        for k := 0 to Settings.NumOfProgs - 1 do
+        for k := 0 to Settings.NumOfBlocks - 1 do
         begin
-          s := s + FDelimiter + IntToStr(FProgram[k].Step[j].INTERVALL[i].PAUSE.Value);
+          s := s + FDelimiter + IntToStr(FBlock[k].Step[j].INTERVALL[i].PAUSE.Value);
         end;
-        RecipeFiles[FProgram[0].ModeFile].Add(s);
+        RecipeFiles[FBlock[0].ModeFile].Add(s);
       end;
     end;
 
     for i := 0 to Settings.NumOfSteps - 1 do
     begin
-      s := GetEntryFolder(FProgram[0].Step[i].Time.EntryFolder);
+      s := GetEntryFolder(FBlock[0].Step[i].Time.EntryFolder);
       s := s + Format(Settings.StepTime, [i]);
-      for k := 0 to Settings.NumOfProgs - 1 do
+      for k := 0 to Settings.NumOfBlocks - 1 do
       begin
-        s := s + FDelimiter + IntToStr(FProgram[k].Step[i].Time.Value);
+        s := s + FDelimiter + IntToStr(FBlock[k].Step[i].Time.Value);
       end;
-      RecipeFiles[FProgram[0].ModeFile].Add(s);
+      RecipeFiles[FBlock[0].ModeFile].Add(s);
     end;
 
     for i := 0 to Settings.NumOfAnalogIn - 1 do
     begin
       for j := 0 to Settings.NumOfSteps - 1 do
       begin
-        s := GetEntryFolder(FProgram[0].Step[j].AnalogIn[i].Default.Value.EntryFolder);
+        s := GetEntryFolder(FBlock[0].Step[j].AnalogIn[i].Default.Value.EntryFolder);
         s := s + Format(Settings.AnalogIn, [i + 1, j]);
-        for k := 0 to Settings.NumOfProgs - 1 do
+        for k := 0 to Settings.NumOfBlocks - 1 do
         begin
-          s := s + FDelimiter + FloatToStr(FProgram[k].Step[j].AnalogIn[i].Default.Value.Value);
+          s := s + FDelimiter + FloatToStr(FBlock[k].Step[j].AnalogIn[i].Default.Value.Value);
         end;
-        RecipeFiles[FProgram[0].AnalogInValueFile].Add(s);
+        RecipeFiles[FBlock[0].AnalogInValueFile].Add(s);
       end;
     end;
 
@@ -3311,13 +3306,13 @@ begin
     begin
       for j := 0 to Settings.NumOfSteps - 1 do
       begin
-        s := GetEntryFolder(FProgram[0].Step[j].AnalogIn[i].Alternate.Value.EntryFolder);
+        s := GetEntryFolder(FBlock[0].Step[j].AnalogIn[i].Alternate.Value.EntryFolder);
         s := s + Format(Settings.AnalogIn, [i + 1, j]);
-        for k := 0 to Settings.NumOfProgs - 1 do
+        for k := 0 to Settings.NumOfBlocks - 1 do
         begin
-          s := s + FDelimiter + FloatToStr(FProgram[k].Step[j].AnalogIn[i].Alternate.Value.Value);
+          s := s + FDelimiter + FloatToStr(FBlock[k].Step[j].AnalogIn[i].Alternate.Value.Value);
         end;
-        RecipeFiles[FProgram[0].AnalogInAlternateValueFile].Add(s);
+        RecipeFiles[FBlock[0].AnalogInAlternateValueFile].Add(s);
       end;
     end;
 
@@ -3325,13 +3320,13 @@ begin
     begin
       for j := 0 to Settings.NumOfSteps - 1 do
       begin
-        s := GetEntryFolder(FProgram[0].Step[j].AnalogIn[i].Default.Mode.EntryFolder);
+        s := GetEntryFolder(FBlock[0].Step[j].AnalogIn[i].Default.Mode.EntryFolder);
         s := s + Format(Settings.AnalogMode, [i + 1, j]);
-        for k := 0 to Settings.NumOfProgs - 1 do
+        for k := 0 to Settings.NumOfBlocks - 1 do
         begin
-          s := s + FDelimiter + FloatToStr(FProgram[k].Step[j].AnalogIn[i].Default.Mode.Value);
+          s := s + FDelimiter + FloatToStr(FBlock[k].Step[j].AnalogIn[i].Default.Mode.Value);
         end;
-        RecipeFiles[FProgram[0].AnalogInModeFile].Add(s);
+        RecipeFiles[FBlock[0].AnalogInModeFile].Add(s);
       end;
     end;
 
@@ -3339,13 +3334,13 @@ begin
     begin
       for j := 0 to Settings.NumOfSteps - 1 do
       begin
-        s := GetEntryFolder(FProgram[0].Step[j].AnalogIn[i].Alternate.Mode.EntryFolder);
+        s := GetEntryFolder(FBlock[0].Step[j].AnalogIn[i].Alternate.Mode.EntryFolder);
         s := s + Format(Settings.AnalogMode, [i + 1, j]);
-        for k := 0 to Settings.NumOfProgs - 1 do
+        for k := 0 to Settings.NumOfBlocks - 1 do
         begin
-          s := s + FDelimiter + FloatToStr(FProgram[k].Step[j].AnalogIn[i].Alternate.Mode.Value);
+          s := s + FDelimiter + FloatToStr(FBlock[k].Step[j].AnalogIn[i].Alternate.Mode.Value);
         end;
-        RecipeFiles[FProgram[0].AnalogInAlternateModeFile].Add(s);
+        RecipeFiles[FBlock[0].AnalogInAlternateModeFile].Add(s);
       end;
     end;
 
@@ -3353,13 +3348,13 @@ begin
     begin
       for j := 0 to Settings.NumOfSteps - 1 do
       begin
-        s := GetEntryFolder(FProgram[0].Step[j].AnalogOut[i].EntryFolder);
+        s := GetEntryFolder(FBlock[0].Step[j].AnalogOut[i].EntryFolder);
         s := s + Format(Settings.AnalogOut, [i + 1, j]);
-        for k := 0 to Settings.NumOfProgs - 1 do
+        for k := 0 to Settings.NumOfBlocks - 1 do
         begin
-          s := s + FDelimiter + FloatToStr(FProgram[k].Step[j].AnalogOut[i].Value);
+          s := s + FDelimiter + FloatToStr(FBlock[k].Step[j].AnalogOut[i].Value);
         end;
-        RecipeFiles[FProgram[0].AnalogOutFile].Add(s);
+        RecipeFiles[FBlock[0].AnalogOutFile].Add(s);
       end;
     end;
 
@@ -3380,11 +3375,12 @@ end;
 procedure TCleanProgParser.SendProgress();
 begin
   Inc(FSendCount);
-  if Assigned(FOnProgress) and (FSendCount >= 10) then
-  begin
-    FOnProgress(self, (FCount * 100) / FMaxCount);
-    FSendCount := 0;
-  end;
+  { TODO : Einkommentieren }
+//  if Assigned(FOnProgress) and (FSendCount >= 10) then
+//  begin
+//    FOnProgress(self, (FCount * 100) / FMaxCount);
+//    FSendCount := 0;
+//  end;
 end;
 
 procedure TCleanProgParser.SetDescription(const Value : TDescription);
@@ -3410,14 +3406,27 @@ begin
   end;
 end;
 
-procedure TCleanProgParser.SetSelectedProgram(const Value : Integer);
+procedure TCleanProgParser.SetBlockName(const Value : string);
 begin
-  if not InRange(Value, 1, Settings.NumOfProgs) then
+  if InRange(FSelectedBlock, 0, Settings.NumOfBlocks - 1) then
+  begin
+    FBlock[FSelectedBlock].Name.Value := Value;
+  end;
+end;
+
+procedure TCleanProgParser.SetSelectedBlock(const Value : Integer);
+begin
+  if not InRange(Value, 1, Settings.NumOfBlocks) then
   begin
     raise TCleanProgException.CreateFmt('Selected Program Out of Range Min: %d, Max: %d, Is: %d',
-      [1, Settings.NumOfProgs, Value]);
+      [1, Settings.NumOfBlocks, Value]);
   end;
-  FSelectedProgram := Value - 1;
+  FSelectedBlock := Value - 1;
+end;
+
+procedure TCleanProgParser.SetSelectedProgram(const Value : Integer);
+begin
+
 end;
 
 procedure TCleanProgParser.SetStep(index : Integer; const Value : TStep);
@@ -3427,21 +3436,417 @@ begin
     raise TCleanProgException.CreateFmt('Selected Step Out of Range Min: %d, Max: %d, Is: %d',
       [0, Settings.NumOfSteps - 1, index]);
   end;
-  if InRange(FSelectedProgram, 0, Settings.NumOfProgs - 1) then
+  if InRange(FSelectedBlock, 0, Settings.NumOfBlocks - 1) then
   begin
-    FProgram[FSelectedProgram].Step[index] := Value;
+    FBlock[FSelectedBlock].Step[index] := Value;
   end;
 end;
 
 procedure TCleanProgParser.SetStepName(index : Integer; const Value : string);
 begin
-  FProgram[FSelectedProgram].Step[Index].Name[FLanguage].Value := Value;
+  FBlock[FSelectedBlock].Step[Index].Name[FLanguage].Value := Value;
 end;
 
-{ TData }
 { TCleanProgParserSingleDatasetName }
 
-procedure TCleanProgParserSingleDatasetName.ParseProgName;
+procedure TCleanProgParserSingleDatasetName.ParseBlockName;
+var
+  i : Integer;
+  s : string;
+  Data : TData;
+begin
+  for i := 0 to Settings.NumOfBlocks - 1 do
+  begin
+    s := Format(Settings.BlockName, [i + 1]);
+    if not FLines.TryGetValue(s, Data) then
+    begin
+      raise TCleanProgException.CreateFmt('Value %s not Found', [s]);
+    end;
+    if Data.Data.Count >= 1 then
+    begin
+      FBlock[i].Name.Value := Data.Data.Items[0].Value;
+      FBlock[i].Name.EntryFolder := Data.Folder;
+    end
+    else
+    begin
+      FBlock[i].Name.Value := '';
+      FBlock[i].Name.EntryFolder := Data.Folder;
+    end;
+    FBlock[i].NameFile := Data.FileIndex;
+    Inc(FCount);
+    SendProgress;
+  end;
+end;
+
+procedure TCleanProgParserSingleDatasetName.SaveFiles(Folder : String);
+var
+  i, j, lastCreated : Integer;
+  s : string;
+  k : Integer;
+  RecipeFiles : array of TStringList;
+const
+  cSimpleBoolStrs : array [Boolean] of string = ('0', '1');
+
+  function GetEntryFolder(Index : Integer) : String;
+  begin
+    if (Index <> - 1) and (Index <= FEntryFolders.Count - 1) then
+    begin
+      Result := FEntryFolders.Strings[Index];
+    end
+    else
+    begin
+      Result := '';
+    end;
+  end;
+
+begin
+  lastCreated := 0;
+  SetLength(RecipeFiles, Settings.NumOfFiles);
+  try
+    for i := 0 to Settings.NumOfFiles - 1 do
+    begin
+      RecipeFiles[i] := TStringList.Create;
+      lastCreated := i;
+      RecipeFiles[i].AddStrings(FRecipeFileName[i].Header);
+    end;
+
+    for i := 0 to Settings.NumOfBlocks - 1 do
+    begin
+      s := GetEntryFolder(FBlock[i].Name.EntryFolder);
+      s := s + Format(Settings.BlockName, [i + 1]);
+      s := s + FDelimiter + FBlock[i].Name.Value;
+      RecipeFiles[FBlock[i].NameFile].Add(s);
+    end;
+
+    for i := 0 to Settings.NumOfLangs - 1 do
+    begin
+      for j := 0 to Settings.NumOfSteps - 1 do
+      begin
+        s := GetEntryFolder(FBlock[0].Step[j].Name[i].EntryFolder);
+        s := s + Format(Settings.StepName, [i + 1, j]);
+        for k := 0 to Settings.NumOfBlocks - 1 do
+        begin
+          s := s + FDelimiter + FBlock[k].Step[j].Name[i].Value;
+        end;
+        RecipeFiles[FBlock[0].StepNameFile[i]].Add(s);
+      end;
+    end;
+
+    for i := 0 to Settings.NumOfOutputs - 1 do
+    begin
+      for j := 0 to Settings.NumOfSteps - 1 do
+      begin
+        s := GetEntryFolder(FBlock[0].Step[j].OutputMode[i].EntryFolder);
+        s := s + Format(Settings.OutputMode, [i + 1, j]);
+        for k := 0 to Settings.NumOfBlocks - 1 do
+        begin
+          s := s + FDelimiter + IntToStr(FBlock[k].Step[j].OutputMode[i].Value);
+        end;
+        RecipeFiles[FBlock[0].OutputModeFile].Add(s);
+      end;
+    end;
+
+    for i := 0 to Settings.NumOfInputs - 1 do
+    begin
+      for j := 0 to Settings.NumOfSteps - 1 do
+      begin
+        s := GetEntryFolder(FBlock[0].Step[j].Input[i].Default.Mode.EntryFolder);
+        s := s + Format(Settings.InputMode, [i + 1, j]);
+        for k := 0 to Settings.NumOfBlocks - 1 do
+        begin
+          s := s + FDelimiter + cSimpleBoolStrs[FBlock[k].Step[j].Input[i].Default.Mode.Value];
+        end;
+        RecipeFiles[FBlock[0].InputModeFile].Add(s);
+      end;
+    end;
+
+    for i := 0 to Settings.NumOfInputs - 1 do
+    begin
+      for j := 0 to Settings.NumOfSteps - 1 do
+      begin
+        s := GetEntryFolder(FBlock[0].Step[j].Input[i].Alternate.Mode.EntryFolder);
+        s := s + Format(Settings.InputMode, [i + 1, j]);
+        for k := 0 to Settings.NumOfBlocks - 1 do
+        begin
+          s := s + FDelimiter + cSimpleBoolStrs[FBlock[k].Step[j].Input[i].Alternate.Mode.Value];
+        end;
+        RecipeFiles[FBlock[0].InputAlternateModeFile].Add(s);
+      end;
+    end;
+
+    for i := 0 to Settings.NumOfInputs - 1 do
+    begin
+      for j := 0 to Settings.NumOfSteps - 1 do
+      begin
+        s := GetEntryFolder(FBlock[0].Step[j].Input[i].Default.Aktiv.EntryFolder);
+        s := s + Format(Settings.InputAktiv, [i + 1, j]);
+        for k := 0 to Settings.NumOfBlocks - 1 do
+        begin
+          s := s + FDelimiter + cSimpleBoolStrs[FBlock[k].Step[j].Input[i].Default.Aktiv.Value];
+        end;
+        RecipeFiles[FBlock[0].InputAktivFile].Add(s);
+      end;
+    end;
+
+    for i := 0 to Settings.NumOfInputs - 1 do
+    begin
+      for j := 0 to Settings.NumOfSteps - 1 do
+      begin
+        s := GetEntryFolder(FBlock[0].Step[j].Input[i].Alternate.Aktiv.EntryFolder);
+        s := s + Format(Settings.InputAktiv, [i + 1, j]);
+        for k := 0 to Settings.NumOfBlocks - 1 do
+        begin
+          s := s + FDelimiter + cSimpleBoolStrs[FBlock[k].Step[j].Input[i].Alternate.Aktiv.Value];
+        end;
+        RecipeFiles[FBlock[0].InputAlternateAktivFile].Add(s);
+      end;
+    end;
+
+    for i := 0 to Settings.NumOfSteps - 1 do
+    begin
+      s := GetEntryFolder(FBlock[0].Step[i].AlarmStep.EntryFolder);
+      s := s + Format(Settings.AlarmStep, [i]);
+      for k := 0 to Settings.NumOfBlocks - 1 do
+      begin
+        s := s + FDelimiter + IntToStr(FBlock[k].Step[i].AlarmStep.Value);
+      end;
+      RecipeFiles[FBlock[0].ModeFile].Add(s);
+    end;
+
+    for i := 0 to Settings.NumOfSteps - 1 do
+    begin
+      s := GetEntryFolder(FBlock[0].Step[i].AlarmCond.EntryFolder);
+      s := s + Format(Settings.AlarmCond, [i]);
+      for k := 0 to Settings.NumOfBlocks - 1 do
+      begin
+        s := s + FDelimiter + IntToStr(FBlock[k].Step[i].AlarmCond.Value);
+      end;
+      RecipeFiles[FBlock[0].ModeFile].Add(s);
+    end;
+
+    for i := 0 to Settings.NumOfSteps - 1 do
+    begin
+      s := GetEntryFolder(FBlock[0].Step[i].NextCond.EntryFolder);
+      s := s + Format(Settings.NextCond, [i]);
+      for k := 0 to Settings.NumOfBlocks - 1 do
+      begin
+        s := s + FDelimiter + IntToStr(FBlock[k].Step[i].NextCond.Value);
+      end;
+      RecipeFiles[FBlock[0].ModeFile].Add(s);
+    end;
+
+    for i := 0 to Settings.NumOfSteps - 1 do
+    begin
+      s := GetEntryFolder(FBlock[0].Step[i].ContrTime.EntryFolder);
+      s := s + Format(Settings.ContrTime, [i]);
+      for k := 0 to Settings.NumOfBlocks - 1 do
+      begin
+        s := s + FDelimiter + IntToStr(FBlock[k].Step[i].ContrTime.Value);
+      end;
+      RecipeFiles[FBlock[0].ModeFile].Add(s);
+    end;
+
+    for i := 0 to Settings.NumOfIntervalls - 1 do
+    begin
+      for j := 0 to Settings.NumOfSteps - 1 do
+      begin
+        s := GetEntryFolder(FBlock[0].Step[j].INTERVALL[i].INTERVALL.EntryFolder);
+        s := s + Format(Settings.INTERVALL, [i + 1, j]);
+        for k := 0 to Settings.NumOfBlocks - 1 do
+        begin
+          s := s + FDelimiter + IntToStr(FBlock[k].Step[j].INTERVALL[i].INTERVALL.Value);
+        end;
+        RecipeFiles[FBlock[0].ModeFile].Add(s);
+      end;
+    end;
+
+    for i := 0 to Settings.NumOfSteps - 1 do
+    begin
+      s := GetEntryFolder(FBlock[0].Step[i].LOOPS.EntryFolder);
+      s := s + Format(Settings.LOOPS, [i]);
+      for k := 0 to Settings.NumOfBlocks - 1 do
+      begin
+        s := s + FDelimiter + IntToStr(FBlock[k].Step[i].LOOPS.Value);
+      end;
+      RecipeFiles[FBlock[0].ModeFile].Add(s);
+    end;
+
+    for i := 0 to Settings.NumOfSteps - 1 do
+    begin
+      s := GetEntryFolder(FBlock[0].Step[i].NextStep.EntryFolder);
+      s := s + Format(Settings.NextStep, [i]);
+      for k := 0 to Settings.NumOfBlocks - 1 do
+      begin
+        s := s + FDelimiter + IntToStr(FBlock[k].Step[i].NextStep.Value);
+      end;
+      RecipeFiles[FBlock[0].ModeFile].Add(s);
+    end;
+
+    for i := 0 to Settings.NumOfSteps - 1 do
+    begin
+      s := GetEntryFolder(FBlock[0].Step[i].Message.EntryFolder);
+      s := s + Format(Settings.MESSAGES, [i]);
+      for k := 0 to Settings.NumOfBlocks - 1 do
+      begin
+        s := s + FDelimiter + IntToStr(FBlock[k].Step[i].Message.Value);
+      end;
+      RecipeFiles[FBlock[0].ModeFile].Add(s);
+    end;
+
+    for i := 0 to Settings.NumOfIntervalls - 1 do
+    begin
+      for j := 0 to Settings.NumOfSteps - 1 do
+      begin
+        s := GetEntryFolder(FBlock[0].Step[j].INTERVALL[i].PAUSE.EntryFolder);
+        s := s + Format(Settings.PAUSE, [i + 1, j]);
+        for k := 0 to Settings.NumOfBlocks - 1 do
+        begin
+          s := s + FDelimiter + IntToStr(FBlock[k].Step[j].INTERVALL[i].PAUSE.Value);
+        end;
+        RecipeFiles[FBlock[0].ModeFile].Add(s);
+      end;
+    end;
+
+    for i := 0 to Settings.NumOfSteps - 1 do
+    begin
+      s := GetEntryFolder(FBlock[0].Step[i].Time.EntryFolder);
+      s := s + Format(Settings.StepTime, [i]);
+      for k := 0 to Settings.NumOfBlocks - 1 do
+      begin
+        s := s + FDelimiter + IntToStr(FBlock[k].Step[i].Time.Value);
+      end;
+      RecipeFiles[FBlock[0].ModeFile].Add(s);
+    end;
+
+    for i := 0 to Settings.NumOfAnalogIn - 1 do
+    begin
+      for j := 0 to Settings.NumOfSteps - 1 do
+      begin
+        s := GetEntryFolder(FBlock[0].Step[j].AnalogIn[i].Default.Value.EntryFolder);
+        s := s + Format(Settings.AnalogIn, [i + 1, j]);
+        for k := 0 to Settings.NumOfBlocks - 1 do
+        begin
+          s := s + FDelimiter + FloatToStr(FBlock[k].Step[j].AnalogIn[i].Default.Value.Value);
+        end;
+        RecipeFiles[FBlock[0].AnalogInValueFile].Add(s);
+      end;
+    end;
+
+    for i := 0 to Settings.NumOfAnalogIn - 1 do
+    begin
+      for j := 0 to Settings.NumOfSteps - 1 do
+      begin
+        s := GetEntryFolder(FBlock[0].Step[j].AnalogIn[i].Alternate.Value.EntryFolder);
+        s := s + Format(Settings.AnalogIn, [i + 1, j]);
+        for k := 0 to Settings.NumOfBlocks - 1 do
+        begin
+          s := s + FDelimiter + FloatToStr(FBlock[k].Step[j].AnalogIn[i].Alternate.Value.Value);
+        end;
+        RecipeFiles[FBlock[0].AnalogInAlternateValueFile].Add(s);
+      end;
+    end;
+
+    for i := 0 to Settings.NumOfAnalogIn - 1 do
+    begin
+      for j := 0 to Settings.NumOfSteps - 1 do
+      begin
+        s := GetEntryFolder(FBlock[0].Step[j].AnalogIn[i].Default.Mode.EntryFolder);
+        s := s + Format(Settings.AnalogMode, [i + 1, j]);
+        for k := 0 to Settings.NumOfBlocks - 1 do
+        begin
+          s := s + FDelimiter + FloatToStr(FBlock[k].Step[j].AnalogIn[i].Default.Mode.Value);
+        end;
+        RecipeFiles[FBlock[0].AnalogInModeFile].Add(s);
+      end;
+    end;
+
+    for i := 0 to Settings.NumOfAnalogIn - 1 do
+    begin
+      for j := 0 to Settings.NumOfSteps - 1 do
+      begin
+        s := GetEntryFolder(FBlock[0].Step[j].AnalogIn[i].Alternate.Mode.EntryFolder);
+        s := s + Format(Settings.AnalogMode, [i + 1, j]);
+        for k := 0 to Settings.NumOfBlocks - 1 do
+        begin
+          s := s + FDelimiter + FloatToStr(FBlock[k].Step[j].AnalogIn[i].Alternate.Mode.Value);
+        end;
+        RecipeFiles[FBlock[0].AnalogInAlternateModeFile].Add(s);
+      end;
+    end;
+
+    for i := 0 to Settings.NumOfAnalogOut - 1 do
+    begin
+      for j := 0 to Settings.NumOfSteps - 1 do
+      begin
+        s := GetEntryFolder(FBlock[0].Step[j].AnalogOut[i].EntryFolder);
+        s := s + Format(Settings.AnalogOut, [i + 1, j]);
+        for k := 0 to Settings.NumOfBlocks - 1 do
+        begin
+          s := s + FDelimiter + FloatToStr(FBlock[k].Step[j].AnalogOut[i].Value);
+        end;
+        RecipeFiles[FBlock[0].AnalogOutFile].Add(s);
+      end;
+    end;
+
+    for i := 0 to High(RecipeFiles) do
+    begin
+      s := FRecipeFileName[i].FileName;
+      RecipeFiles[i].SaveToFile(Folder + s);
+    end;
+
+  finally
+    for i := 0 to lastCreated do
+    begin
+      FreeAndNil(RecipeFiles[i]);
+    end;
+  end;
+end;
+
+procedure TCleanProgParserBlockBased.ParseFiles;
+begin
+  FMaxCount := FMaxCount + Settings.NumOfProgs + // Loops to parse program names
+    Settings.NumOfProgSteps + // Loops to parse program steps
+    Settings.NumOfBlocks + // Loops to parse block names
+    (Settings.NumOfLangs * Settings.NumOfSteps * FDataSetCount) + // Loops to parse step names
+    (4 * Settings.NumOfInputs * Settings.NumOfSteps * FDataSetCount) + // Loops to parse inputs
+    (2 * Settings.NumOfIntervalls * Settings.NumOfSteps * FDataSetCount) + // Loops to parse intervalls
+    (4 * Settings.NumOfAnalogIn * Settings.NumOfSteps * FDataSetCount) + // Loops to parse analog inputs
+    (Settings.NumOfAnalogOut * Settings.NumOfSteps * FDataSetCount) + // Loops to parse analog outputs
+    (10 * Settings.NumOfSteps * FDataSetCount) + // Loops to parse step control values
+    (Settings.NumOfOutputs * Settings.NumOfSteps * FDataSetCount); // Loops to parse outputs
+
+  FSendCount := 100;
+
+  SendProgress;
+  CreateTask(ParseProgramName, 'ParseProgramName').Run;
+  CreateTask(ParseProgramStep).Run;
+  CreateTask(ParseBlockName).Run;
+  CreateTask(ParseStepName).Run;
+  CreateTask(ParseOutputMode).Run;
+  CreateTask(ParseInputMode).Run;
+  CreateTask(ParseInputModeAlternate).Run;
+  CreateTask(ParseInputAktiv).Run;
+  CreateTask(ParseInputAktivAlternate).Run;
+  CreateTask(ParseIntervall).Run;
+  CreateTask(ParsePause).Run;
+  CreateTask(ParseAnalogIn).Run;
+  CreateTask(ParseAnalogInAlternate).Run;
+  CreateTask(ParseAnalogMode).Run;
+  CreateTask(ParseAnalogModeAlternate).Run;
+  CreateTask(ParseAnalogOut).Run;
+  CreateTask(ParseAlarmStep).Run;
+  CreateTask(ParseAlarmCond).Run;
+  CreateTask(ParseNextCond).Run;
+  CreateTask(ParseNextCondAlternate).Run;
+  CreateTask(ParseContrTime).Run;
+  CreateTask(ParseLoops).Run;
+  CreateTask(ParseNextStep).Run;
+  CreateTask(ParseNextStepAlternate).Run;
+  CreateTask(ParseMessage).Run;
+  CreateTask(ParseStepTime).Run;
+end;
+
+procedure TCleanProgParserBlockBased.ParseProgramName(const task : IOmniTask);
 var
   i : Integer;
   s : string;
@@ -3470,7 +3875,7 @@ begin
   end;
 end;
 
-procedure TCleanProgParserSingleDatasetName.SaveFiles(Folder : String);
+procedure TCleanProgParserBlockBased.SaveFiles(Folder : String);
 var
   i, j, lastCreated : Integer;
   s : string;
@@ -3510,17 +3915,36 @@ begin
       RecipeFiles[FProgram[i].NameFile].Add(s);
     end;
 
+    for i := 0 to Settings.NumOfProgSteps - 1 do
+    begin
+      s := GetEntryFolder(FProgram[0].Step[i].EntryFolder);
+      s := s + Format(Settings.ProgStep, [i + 1]);
+      for j := 0 to Settings.NumOfProgs - 1 do
+      begin
+        s := s + FDelimiter + IntToStr(FProgram[j].Step[i].Value);
+      end;
+      RecipeFiles[FProgram[0].StepFile].Add(s);
+    end;
+
+    for i := 0 to Settings.NumOfBlocks - 1 do
+    begin
+      s := GetEntryFolder(FBlock[i].Name.EntryFolder);
+      s := s + Format(Settings.BlockName, [i + 1]);
+      s := s + FDelimiter + FBlock[i].Name.Value;
+      RecipeFiles[FBlock[i].NameFile].Add(s);
+    end;
+
     for i := 0 to Settings.NumOfLangs - 1 do
     begin
       for j := 0 to Settings.NumOfSteps - 1 do
       begin
-        s := GetEntryFolder(FProgram[0].Step[j].Name[i].EntryFolder);
+        s := GetEntryFolder(FBlock[0].Step[j].Name[i].EntryFolder);
         s := s + Format(Settings.StepName, [i + 1, j]);
-        for k := 0 to Settings.NumOfProgs - 1 do
+        for k := 0 to Settings.NumOfBlocks - 1 do
         begin
-          s := s + FDelimiter + FProgram[k].Step[j].Name[i].Value;
+          s := s + FDelimiter + FBlock[k].Step[j].Name[i].Value;
         end;
-        RecipeFiles[FProgram[0].StepNameFile[i]].Add(s);
+        RecipeFiles[FBlock[0].StepNameFile[i]].Add(s);
       end;
     end;
 
@@ -3528,13 +3952,13 @@ begin
     begin
       for j := 0 to Settings.NumOfSteps - 1 do
       begin
-        s := GetEntryFolder(FProgram[0].Step[j].OutputMode[i].EntryFolder);
+        s := GetEntryFolder(FBlock[0].Step[j].OutputMode[i].EntryFolder);
         s := s + Format(Settings.OutputMode, [i + 1, j]);
-        for k := 0 to Settings.NumOfProgs - 1 do
+        for k := 0 to Settings.NumOfBlocks - 1 do
         begin
-          s := s + FDelimiter + IntToStr(FProgram[k].Step[j].OutputMode[i].Value);
+          s := s + FDelimiter + IntToStr(FBlock[k].Step[j].OutputMode[i].Value);
         end;
-        RecipeFiles[FProgram[0].OutputModeFile].Add(s);
+        RecipeFiles[FBlock[0].OutputModeFile].Add(s);
       end;
     end;
 
@@ -3542,13 +3966,13 @@ begin
     begin
       for j := 0 to Settings.NumOfSteps - 1 do
       begin
-        s := GetEntryFolder(FProgram[0].Step[j].Input[i].Default.Mode.EntryFolder);
+        s := GetEntryFolder(FBlock[0].Step[j].Input[i].Default.Mode.EntryFolder);
         s := s + Format(Settings.InputMode, [i + 1, j]);
-        for k := 0 to Settings.NumOfProgs - 1 do
+        for k := 0 to Settings.NumOfBlocks - 1 do
         begin
-          s := s + FDelimiter + cSimpleBoolStrs[FProgram[k].Step[j].Input[i].Default.Mode.Value];
+          s := s + FDelimiter + cSimpleBoolStrs[FBlock[k].Step[j].Input[i].Default.Mode.Value];
         end;
-        RecipeFiles[FProgram[0].InputModeFile].Add(s);
+        RecipeFiles[FBlock[0].InputModeFile].Add(s);
       end;
     end;
 
@@ -3556,13 +3980,13 @@ begin
     begin
       for j := 0 to Settings.NumOfSteps - 1 do
       begin
-        s := GetEntryFolder(FProgram[0].Step[j].Input[i].Alternate.Mode.EntryFolder);
+        s := GetEntryFolder(FBlock[0].Step[j].Input[i].Alternate.Mode.EntryFolder);
         s := s + Format(Settings.InputMode, [i + 1, j]);
-        for k := 0 to Settings.NumOfProgs - 1 do
+        for k := 0 to Settings.NumOfBlocks - 1 do
         begin
-          s := s + FDelimiter + cSimpleBoolStrs[FProgram[k].Step[j].Input[i].Alternate.Mode.Value];
+          s := s + FDelimiter + cSimpleBoolStrs[FBlock[k].Step[j].Input[i].Alternate.Mode.Value];
         end;
-        RecipeFiles[FProgram[0].InputAlternateModeFile].Add(s);
+        RecipeFiles[FBlock[0].InputAlternateModeFile].Add(s);
       end;
     end;
 
@@ -3570,13 +3994,13 @@ begin
     begin
       for j := 0 to Settings.NumOfSteps - 1 do
       begin
-        s := GetEntryFolder(FProgram[0].Step[j].Input[i].Default.Aktiv.EntryFolder);
+        s := GetEntryFolder(FBlock[0].Step[j].Input[i].Default.Aktiv.EntryFolder);
         s := s + Format(Settings.InputAktiv, [i + 1, j]);
-        for k := 0 to Settings.NumOfProgs - 1 do
+        for k := 0 to Settings.NumOfBlocks - 1 do
         begin
-          s := s + FDelimiter + cSimpleBoolStrs[FProgram[k].Step[j].Input[i].Default.Aktiv.Value];
+          s := s + FDelimiter + cSimpleBoolStrs[FBlock[k].Step[j].Input[i].Default.Aktiv.Value];
         end;
-        RecipeFiles[FProgram[0].InputAktivFile].Add(s);
+        RecipeFiles[FBlock[0].InputAktivFile].Add(s);
       end;
     end;
 
@@ -3584,143 +4008,143 @@ begin
     begin
       for j := 0 to Settings.NumOfSteps - 1 do
       begin
-        s := GetEntryFolder(FProgram[0].Step[j].Input[i].Alternate.Aktiv.EntryFolder);
+        s := GetEntryFolder(FBlock[0].Step[j].Input[i].Alternate.Aktiv.EntryFolder);
         s := s + Format(Settings.InputAktiv, [i + 1, j]);
-        for k := 0 to Settings.NumOfProgs - 1 do
+        for k := 0 to Settings.NumOfBlocks - 1 do
         begin
-          s := s + FDelimiter + cSimpleBoolStrs[FProgram[k].Step[j].Input[i].Alternate.Aktiv.Value];
+          s := s + FDelimiter + cSimpleBoolStrs[FBlock[k].Step[j].Input[i].Alternate.Aktiv.Value];
         end;
-        RecipeFiles[FProgram[0].InputAlternateAktivFile].Add(s);
+        RecipeFiles[FBlock[0].InputAlternateAktivFile].Add(s);
       end;
     end;
 
     for i := 0 to Settings.NumOfSteps - 1 do
     begin
-      s := GetEntryFolder(FProgram[0].Step[i].AlarmStep.EntryFolder);
+      s := GetEntryFolder(FBlock[0].Step[i].AlarmStep.EntryFolder);
       s := s + Format(Settings.AlarmStep, [i]);
-      for k := 0 to Settings.NumOfProgs - 1 do
+      for k := 0 to Settings.NumOfBlocks - 1 do
       begin
-        s := s + FDelimiter + IntToStr(FProgram[k].Step[i].AlarmStep.Value);
+        s := s + FDelimiter + IntToStr(FBlock[k].Step[i].AlarmStep.Value);
       end;
-      RecipeFiles[FProgram[0].ModeFile].Add(s);
+      RecipeFiles[FBlock[0].ModeFile].Add(s);
     end;
 
     for i := 0 to Settings.NumOfSteps - 1 do
     begin
-      s := GetEntryFolder(FProgram[0].Step[i].AlarmCond.EntryFolder);
+      s := GetEntryFolder(FBlock[0].Step[i].AlarmCond.EntryFolder);
       s := s + Format(Settings.AlarmCond, [i]);
-      for k := 0 to Settings.NumOfProgs - 1 do
+      for k := 0 to Settings.NumOfBlocks - 1 do
       begin
-        s := s + FDelimiter + IntToStr(FProgram[k].Step[i].AlarmCond.Value);
+        s := s + FDelimiter + IntToStr(FBlock[k].Step[i].AlarmCond.Value);
       end;
-      RecipeFiles[FProgram[0].ModeFile].Add(s);
+      RecipeFiles[FBlock[0].ModeFile].Add(s);
     end;
 
     for i := 0 to Settings.NumOfSteps - 1 do
     begin
-      s := GetEntryFolder(FProgram[0].Step[i].NextCond.EntryFolder);
+      s := GetEntryFolder(FBlock[0].Step[i].NextCond.EntryFolder);
       s := s + Format(Settings.NextCond, [i]);
-      for k := 0 to Settings.NumOfProgs - 1 do
+      for k := 0 to Settings.NumOfBlocks - 1 do
       begin
-        s := s + FDelimiter + IntToStr(FProgram[k].Step[i].NextCond.Value);
+        s := s + FDelimiter + IntToStr(FBlock[k].Step[i].NextCond.Value);
       end;
-      RecipeFiles[FProgram[0].ModeFile].Add(s);
+      RecipeFiles[FBlock[0].ModeFile].Add(s);
     end;
 
     for i := 0 to Settings.NumOfSteps - 1 do
     begin
-      s := GetEntryFolder(FProgram[0].Step[i].ContrTime.EntryFolder);
+      s := GetEntryFolder(FBlock[0].Step[i].ContrTime.EntryFolder);
       s := s + Format(Settings.ContrTime, [i]);
-      for k := 0 to Settings.NumOfProgs - 1 do
+      for k := 0 to Settings.NumOfBlocks - 1 do
       begin
-        s := s + FDelimiter + IntToStr(FProgram[k].Step[i].ContrTime.Value);
+        s := s + FDelimiter + IntToStr(FBlock[k].Step[i].ContrTime.Value);
       end;
-      RecipeFiles[FProgram[0].ModeFile].Add(s);
+      RecipeFiles[FBlock[0].ModeFile].Add(s);
     end;
 
     for i := 0 to Settings.NumOfIntervalls - 1 do
     begin
       for j := 0 to Settings.NumOfSteps - 1 do
       begin
-        s := GetEntryFolder(FProgram[0].Step[j].INTERVALL[i].INTERVALL.EntryFolder);
+        s := GetEntryFolder(FBlock[0].Step[j].INTERVALL[i].INTERVALL.EntryFolder);
         s := s + Format(Settings.INTERVALL, [i + 1, j]);
-        for k := 0 to Settings.NumOfProgs - 1 do
+        for k := 0 to Settings.NumOfBlocks - 1 do
         begin
-          s := s + FDelimiter + IntToStr(FProgram[k].Step[j].INTERVALL[i].INTERVALL.Value);
+          s := s + FDelimiter + IntToStr(FBlock[k].Step[j].INTERVALL[i].INTERVALL.Value);
         end;
-        RecipeFiles[FProgram[0].ModeFile].Add(s);
+        RecipeFiles[FBlock[0].ModeFile].Add(s);
       end;
     end;
 
     for i := 0 to Settings.NumOfSteps - 1 do
     begin
-      s := GetEntryFolder(FProgram[0].Step[i].LOOPS.EntryFolder);
+      s := GetEntryFolder(FBlock[0].Step[i].LOOPS.EntryFolder);
       s := s + Format(Settings.LOOPS, [i]);
-      for k := 0 to Settings.NumOfProgs - 1 do
+      for k := 0 to Settings.NumOfBlocks - 1 do
       begin
-        s := s + FDelimiter + IntToStr(FProgram[k].Step[i].LOOPS.Value);
+        s := s + FDelimiter + IntToStr(FBlock[k].Step[i].LOOPS.Value);
       end;
-      RecipeFiles[FProgram[0].ModeFile].Add(s);
+      RecipeFiles[FBlock[0].ModeFile].Add(s);
     end;
 
     for i := 0 to Settings.NumOfSteps - 1 do
     begin
-      s := GetEntryFolder(FProgram[0].Step[i].NextStep.EntryFolder);
+      s := GetEntryFolder(FBlock[0].Step[i].NextStep.EntryFolder);
       s := s + Format(Settings.NextStep, [i]);
-      for k := 0 to Settings.NumOfProgs - 1 do
+      for k := 0 to Settings.NumOfBlocks - 1 do
       begin
-        s := s + FDelimiter + IntToStr(FProgram[k].Step[i].NextStep.Value);
+        s := s + FDelimiter + IntToStr(FBlock[k].Step[i].NextStep.Value);
       end;
-      RecipeFiles[FProgram[0].ModeFile].Add(s);
+      RecipeFiles[FBlock[0].ModeFile].Add(s);
     end;
 
     for i := 0 to Settings.NumOfSteps - 1 do
     begin
-      s := GetEntryFolder(FProgram[0].Step[i].Message.EntryFolder);
+      s := GetEntryFolder(FBlock[0].Step[i].Message.EntryFolder);
       s := s + Format(Settings.MESSAGES, [i]);
-      for k := 0 to Settings.NumOfProgs - 1 do
+      for k := 0 to Settings.NumOfBlocks - 1 do
       begin
-        s := s + FDelimiter + IntToStr(FProgram[k].Step[i].Message.Value);
+        s := s + FDelimiter + IntToStr(FBlock[k].Step[i].Message.Value);
       end;
-      RecipeFiles[FProgram[0].ModeFile].Add(s);
+      RecipeFiles[FBlock[0].ModeFile].Add(s);
     end;
 
     for i := 0 to Settings.NumOfIntervalls - 1 do
     begin
       for j := 0 to Settings.NumOfSteps - 1 do
       begin
-        s := GetEntryFolder(FProgram[0].Step[j].INTERVALL[i].PAUSE.EntryFolder);
+        s := GetEntryFolder(FBlock[0].Step[j].INTERVALL[i].PAUSE.EntryFolder);
         s := s + Format(Settings.PAUSE, [i + 1, j]);
-        for k := 0 to Settings.NumOfProgs - 1 do
+        for k := 0 to Settings.NumOfBlocks - 1 do
         begin
-          s := s + FDelimiter + IntToStr(FProgram[k].Step[j].INTERVALL[i].PAUSE.Value);
+          s := s + FDelimiter + IntToStr(FBlock[k].Step[j].INTERVALL[i].PAUSE.Value);
         end;
-        RecipeFiles[FProgram[0].ModeFile].Add(s);
+        RecipeFiles[FBlock[0].ModeFile].Add(s);
       end;
     end;
 
     for i := 0 to Settings.NumOfSteps - 1 do
     begin
-      s := GetEntryFolder(FProgram[0].Step[i].Time.EntryFolder);
+      s := GetEntryFolder(FBlock[0].Step[i].Time.EntryFolder);
       s := s + Format(Settings.StepTime, [i]);
-      for k := 0 to Settings.NumOfProgs - 1 do
+      for k := 0 to Settings.NumOfBlocks - 1 do
       begin
-        s := s + FDelimiter + IntToStr(FProgram[k].Step[i].Time.Value);
+        s := s + FDelimiter + IntToStr(FBlock[k].Step[i].Time.Value);
       end;
-      RecipeFiles[FProgram[0].ModeFile].Add(s);
+      RecipeFiles[FBlock[0].ModeFile].Add(s);
     end;
 
     for i := 0 to Settings.NumOfAnalogIn - 1 do
     begin
       for j := 0 to Settings.NumOfSteps - 1 do
       begin
-        s := GetEntryFolder(FProgram[0].Step[j].AnalogIn[i].Default.Value.EntryFolder);
+        s := GetEntryFolder(FBlock[0].Step[j].AnalogIn[i].Default.Value.EntryFolder);
         s := s + Format(Settings.AnalogIn, [i + 1, j]);
-        for k := 0 to Settings.NumOfProgs - 1 do
+        for k := 0 to Settings.NumOfBlocks - 1 do
         begin
-          s := s + FDelimiter + FloatToStr(FProgram[k].Step[j].AnalogIn[i].Default.Value.Value);
+          s := s + FDelimiter + FloatToStr(FBlock[k].Step[j].AnalogIn[i].Default.Value.Value);
         end;
-        RecipeFiles[FProgram[0].AnalogInValueFile].Add(s);
+        RecipeFiles[FBlock[0].AnalogInValueFile].Add(s);
       end;
     end;
 
@@ -3728,13 +4152,13 @@ begin
     begin
       for j := 0 to Settings.NumOfSteps - 1 do
       begin
-        s := GetEntryFolder(FProgram[0].Step[j].AnalogIn[i].Alternate.Value.EntryFolder);
+        s := GetEntryFolder(FBlock[0].Step[j].AnalogIn[i].Alternate.Value.EntryFolder);
         s := s + Format(Settings.AnalogIn, [i + 1, j]);
-        for k := 0 to Settings.NumOfProgs - 1 do
+        for k := 0 to Settings.NumOfBlocks - 1 do
         begin
-          s := s + FDelimiter + FloatToStr(FProgram[k].Step[j].AnalogIn[i].Alternate.Value.Value);
+          s := s + FDelimiter + FloatToStr(FBlock[k].Step[j].AnalogIn[i].Alternate.Value.Value);
         end;
-        RecipeFiles[FProgram[0].AnalogInAlternateValueFile].Add(s);
+        RecipeFiles[FBlock[0].AnalogInAlternateValueFile].Add(s);
       end;
     end;
 
@@ -3742,13 +4166,13 @@ begin
     begin
       for j := 0 to Settings.NumOfSteps - 1 do
       begin
-        s := GetEntryFolder(FProgram[0].Step[j].AnalogIn[i].Default.Mode.EntryFolder);
+        s := GetEntryFolder(FBlock[0].Step[j].AnalogIn[i].Default.Mode.EntryFolder);
         s := s + Format(Settings.AnalogMode, [i + 1, j]);
-        for k := 0 to Settings.NumOfProgs - 1 do
+        for k := 0 to Settings.NumOfBlocks - 1 do
         begin
-          s := s + FDelimiter + FloatToStr(FProgram[k].Step[j].AnalogIn[i].Default.Mode.Value);
+          s := s + FDelimiter + FloatToStr(FBlock[k].Step[j].AnalogIn[i].Default.Mode.Value);
         end;
-        RecipeFiles[FProgram[0].AnalogInModeFile].Add(s);
+        RecipeFiles[FBlock[0].AnalogInModeFile].Add(s);
       end;
     end;
 
@@ -3756,13 +4180,13 @@ begin
     begin
       for j := 0 to Settings.NumOfSteps - 1 do
       begin
-        s := GetEntryFolder(FProgram[0].Step[j].AnalogIn[i].Alternate.Mode.EntryFolder);
+        s := GetEntryFolder(FBlock[0].Step[j].AnalogIn[i].Alternate.Mode.EntryFolder);
         s := s + Format(Settings.AnalogMode, [i + 1, j]);
-        for k := 0 to Settings.NumOfProgs - 1 do
+        for k := 0 to Settings.NumOfBlocks - 1 do
         begin
-          s := s + FDelimiter + FloatToStr(FProgram[k].Step[j].AnalogIn[i].Alternate.Mode.Value);
+          s := s + FDelimiter + FloatToStr(FBlock[k].Step[j].AnalogIn[i].Alternate.Mode.Value);
         end;
-        RecipeFiles[FProgram[0].AnalogInAlternateModeFile].Add(s);
+        RecipeFiles[FBlock[0].AnalogInAlternateModeFile].Add(s);
       end;
     end;
 
@@ -3770,13 +4194,13 @@ begin
     begin
       for j := 0 to Settings.NumOfSteps - 1 do
       begin
-        s := GetEntryFolder(FProgram[0].Step[j].AnalogOut[i].EntryFolder);
+        s := GetEntryFolder(FBlock[0].Step[j].AnalogOut[i].EntryFolder);
         s := s + Format(Settings.AnalogOut, [i + 1, j]);
-        for k := 0 to Settings.NumOfProgs - 1 do
+        for k := 0 to Settings.NumOfBlocks - 1 do
         begin
-          s := s + FDelimiter + FloatToStr(FProgram[k].Step[j].AnalogOut[i].Value);
+          s := s + FDelimiter + FloatToStr(FBlock[k].Step[j].AnalogOut[i].Value);
         end;
-        RecipeFiles[FProgram[0].AnalogOutFile].Add(s);
+        RecipeFiles[FBlock[0].AnalogOutFile].Add(s);
       end;
     end;
 
@@ -3791,6 +4215,193 @@ begin
     begin
       FreeAndNil(RecipeFiles[i]);
     end;
+  end;
+end;
+
+procedure TCleanProgParserBlockBased.ParseInputModeAlternate(const task : IOmniTask);
+var
+  i, k : Integer;
+  s : string;
+  Data : TData;
+  RawValue : TRawValue;
+begin
+  for i := 0 to Settings.NumOfInputs - 1 do
+  begin
+    for k := 0 to Settings.NumOfSteps - 1 do
+    begin
+      s := Format(Settings.InputAlternateMode, [i + 1, k]);
+      if not FLines.TryGetValue(s, Data) then
+      begin
+        raise TCleanProgException.CreateFmt('Value %s not Found', [s]);
+      end;
+      for RawValue in Data.Data do
+      begin
+        FBlock[RawValue.FormatIndex].Step[k].Input[i].Alternate.Mode.Value := RawValue.Value = '1';
+        FBlock[RawValue.FormatIndex].Step[k].Input[i].Alternate.Mode.EntryFolder := Data.Folder;
+        FBlock[RawValue.FormatIndex].InputAlternateModeFile := Data.FileIndex;
+        Inc(FCount);
+        SendProgress;
+      end;
+    end;
+  end;
+end;
+
+procedure TCleanProgParserBlockBased.ParseInputAktivAlternate(const task : IOmniTask);
+var
+  i, k : Integer;
+  s : string;
+  Data : TData;
+  RawValue : TRawValue;
+begin
+  for i := 0 to Settings.NumOfInputs - 1 do
+  begin
+    for k := 0 to Settings.NumOfSteps - 1 do
+    begin
+      s := Format(Settings.InputAlternateAktiv, [i + 1, k]);
+      if not FLines.TryGetValue(s, Data) then
+      begin
+        raise TCleanProgException.CreateFmt('Value %s not Found', [s]);
+      end;
+      for RawValue in Data.Data do
+      begin
+        FBlock[RawValue.FormatIndex].Step[k].Input[i].Alternate.Aktiv.Value := RawValue.Value = '1';
+        FBlock[RawValue.FormatIndex].Step[k].Input[i].Alternate.Aktiv.EntryFolder := Data.Folder;
+        FBlock[RawValue.FormatIndex].InputAlternateAktivFile := Data.FileIndex;
+        Inc(FCount);
+        SendProgress;
+      end;
+    end;
+  end;
+end;
+
+procedure TCleanProgParserBlockBased.ParseAnalogInAlternate(const task : IOmniTask);
+var
+  i, k : Integer;
+  s : string;
+  Data : TData;
+  RawValue : TRawValue;
+begin
+  for i := 0 to Settings.NumOfAnalogIn - 1 do
+  begin
+    for k := 0 to Settings.NumOfSteps - 1 do
+    begin
+      s := Format(Settings.AnalogInAlternate, [i + 1, k]);
+      if not FLines.TryGetValue(s, Data) then
+      begin
+        raise TCleanProgException.CreateFmt('Value %s not Found', [s]);
+      end;
+      for RawValue in Data.Data do
+      begin
+        FBlock[RawValue.FormatIndex].Step[k].AnalogIn[i].Alternate.Value.Value := StrToFloat(RawValue.Value);
+        FBlock[RawValue.FormatIndex].Step[k].AnalogIn[i].Alternate.Value.EntryFolder := Data.Folder;
+        FBlock[RawValue.FormatIndex].AnalogInAlternateValueFile := Data.FileIndex;
+        Inc(FCount);
+        SendProgress;
+      end;
+    end;
+  end;
+end;
+
+procedure TCleanProgParserBlockBased.ParseAnalogModeAlternate(const task : IOmniTask);
+var
+  i, k : Integer;
+  s : string;
+  Data : TData;
+  RawValue : TRawValue;
+begin
+  for i := 0 to Settings.NumOfAnalogIn - 1 do
+  begin
+    for k := 0 to Settings.NumOfSteps - 1 do
+    begin
+      s := Format(Settings.AnalogModeAlternate, [i + 1, k]);
+      if not FLines.TryGetValue(s, Data) then
+      begin
+        raise TCleanProgException.CreateFmt('Value %s not Found', [s]);
+      end;
+      for RawValue in Data.Data do
+      begin
+        FBlock[RawValue.FormatIndex].Step[k].AnalogIn[i].Alternate.Mode.Value := StrToFloat(RawValue.Value);
+        FBlock[RawValue.FormatIndex].Step[k].AnalogIn[i].Alternate.Mode.EntryFolder := Data.Folder;
+        FBlock[RawValue.FormatIndex].AnalogInAlternateModeFile := Data.FileIndex;
+        Inc(FCount);
+        SendProgress;
+      end;
+    end;
+  end;
+end;
+
+procedure TCleanProgParserBlockBased.ParseNextCondAlternate(const task : IOmniTask);
+var
+  i : Integer;
+  s : string;
+  Data : TData;
+  RawValue : TRawValue;
+begin
+  for i := 0 to Settings.NumOfSteps - 1 do
+  begin
+    s := Format(Settings.NextAlternateCond, [i]);
+    if not FLines.TryGetValue(s, Data) then
+    begin
+      raise TCleanProgException.CreateFmt('Value %s not Found', [s]);
+    end;
+    for RawValue in Data.Data do
+    begin
+      FBlock[RawValue.FormatIndex].Step[i].NextCondAlternate.Value := StrToIntDef(RawValue.Value, 0);
+      FBlock[RawValue.FormatIndex].Step[i].NextCondAlternate.EntryFolder := Data.Folder;
+      FBlock[RawValue.FormatIndex].ModeFile := Data.FileIndex;
+      Inc(FCount);
+      SendProgress;
+    end;
+  end;
+end;
+
+procedure TCleanProgParserBlockBased.ParseNextStepAlternate(const task : IOmniTask);
+var
+  i : Integer;
+  s : string;
+  Data : TData;
+  RawValue : TRawValue;
+begin
+  for i := 0 to Settings.NumOfSteps - 1 do
+  begin
+    s := Format(Settings.NextAlternateStep, [i]);
+    if not FLines.TryGetValue(s, Data) then
+    begin
+      raise TCleanProgException.CreateFmt('Value %s not Found', [s]);
+    end;
+    for RawValue in Data.Data do
+    begin
+      FBlock[RawValue.FormatIndex].Step[i].NextStepAlternate.Value := StrToIntDef(RawValue.Value, 0);
+      FBlock[RawValue.FormatIndex].Step[i].NextStepAlternate.EntryFolder := Data.Folder;
+      FBlock[RawValue.FormatIndex].ModeFile := Data.FileIndex;
+      Inc(FCount);
+      SendProgress;
+    end;
+  end;
+end;
+
+procedure TCleanProgParserBlockBased.ParseProgramStep(const task : IOmniTask);
+var
+  i : Integer;
+  s : string;
+  Data : TData;
+  RawValue : TRawValue;
+begin
+  for i := 0 to Settings.NumOfProgSteps - 1 do
+  begin
+    s := Format(Settings.ProgStep, [i + 1]);
+    if not FLines.TryGetValue(s, Data) then
+    begin
+      raise TCleanProgException.CreateFmt('Value %s not Found', [s]);
+    end;
+    for RawValue in Data.Data do
+    begin
+      FProgram[RawValue.FormatIndex].Step[i].Value := StrToIntDef(RawValue.Value, 0);
+      FProgram[RawValue.FormatIndex].Step[i].EntryFolder := Data.Folder;
+      FProgram[RawValue.FormatIndex].StepFile := Data.FileIndex;
+    end;
+    Inc(FCount);
+    SendProgress;
   end;
 end;
 

@@ -2,11 +2,11 @@ object MainForm: TMainForm
   Left = 88
   Top = 93
   Caption = 'Reinigungseditor'
-  ClientHeight = 673
-  ClientWidth = 919
+  ClientHeight = 728
+  ClientWidth = 1008
   Color = clBtnFace
-  Constraints.MinHeight = 330
-  Constraints.MinWidth = 768
+  Constraints.MinHeight = 786
+  Constraints.MinWidth = 1024
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
@@ -19,12 +19,12 @@ object MainForm: TMainForm
   OnDestroy = FormDestroy
   OnMouseWheel = FormMouseWheel
   DesignSize = (
-    919
-    673)
+    1008
+    728)
   PixelsPerInch = 96
   TextHeight = 13
   object lLanguage: TLabel
-    Left = 817
+    Left = 906
     Top = 8
     Width = 44
     Height = 21
@@ -49,7 +49,7 @@ object MainForm: TMainForm
     Height = 21
     AutoSize = False
     Caption = 'Program:'
-    FocusControl = seProgramNumber
+    FocusControl = seBlockNumber
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
     Font.Height = -11
@@ -62,9 +62,9 @@ object MainForm: TMainForm
   object pcPages: TPageControl
     Left = 8
     Top = 32
-    Width = 903
-    Height = 632
-    ActivePage = tsCrosses
+    Width = 992
+    Height = 687
+    ActivePage = tsInputs
     Anchors = [akLeft, akTop, akRight, akBottom]
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText
@@ -79,13 +79,13 @@ object MainForm: TMainForm
     object tsBasic: TTabSheet
       Caption = 'Grundbild'
       DesignSize = (
-        895
-        604)
+        984
+        659)
       object iBasic: TImage
         Left = 3
         Top = 3
-        Width = 889
-        Height = 512
+        Width = 978
+        Height = 567
         Anchors = [akLeft, akTop, akRight, akBottom]
         Center = True
         Proportional = True
@@ -95,19 +95,19 @@ object MainForm: TMainForm
       end
       object Panel1: TPanel
         Left = 519
-        Top = 521
-        Width = 373
+        Top = 576
+        Width = 462
         Height = 80
         Anchors = [akLeft, akRight, akBottom]
         BevelOuter = bvNone
         TabOrder = 6
         DesignSize = (
-          373
+          462
           80)
         object pbParseProgress: TUbuntuProgress
           Left = 8
           Top = 29
-          Width = 362
+          Width = 451
           Height = 19
           Anchors = [akLeft, akRight, akBottom]
           Max = 100.000000000000000000
@@ -117,7 +117,7 @@ object MainForm: TMainForm
       end
       object btBasicImport: TBitBtn
         Left = 3
-        Top = 521
+        Top = 576
         Width = 80
         Height = 80
         Hint = 'Exportierte Dateien vom HMI'
@@ -128,10 +128,11 @@ object MainForm: TMainForm
         ShowHint = True
         TabOrder = 0
         OnClick = btBasicImportClick
+        ExplicitTop = 521
       end
       object btBasicExport: TBitBtn
         Left = 89
-        Top = 521
+        Top = 576
         Width = 80
         Height = 80
         Hint = 'Dateien f'#252'r den Import im HMI'
@@ -142,10 +143,11 @@ object MainForm: TMainForm
         ShowHint = True
         TabOrder = 1
         OnClick = btBasicExportClick
+        ExplicitTop = 521
       end
       object btBasicImportPicture: TButton
         Left = 175
-        Top = 521
+        Top = 576
         Width = 80
         Height = 80
         Hint = 'Screenshot f'#252'rs Grundbild'
@@ -156,10 +158,11 @@ object MainForm: TMainForm
         TabOrder = 2
         WordWrap = True
         OnClick = btBasicImportPictureClick
+        ExplicitTop = 521
       end
       object btBasicLoad: TButton
         Left = 261
-        Top = 521
+        Top = 576
         Width = 80
         Height = 80
         Hint = 'Eigenes Format (.xml)'
@@ -170,10 +173,11 @@ object MainForm: TMainForm
         TabOrder = 3
         WordWrap = True
         OnClick = btBasicLoadClick
+        ExplicitTop = 521
       end
       object btBasicSave: TButton
         Left = 347
-        Top = 521
+        Top = 576
         Width = 80
         Height = 80
         Hint = 'Eigenes Format (.xml)'
@@ -185,10 +189,11 @@ object MainForm: TMainForm
         TabOrder = 4
         WordWrap = True
         OnClick = btBasicSaveClick
+        ExplicitTop = 521
       end
       object btBasicLoadDesc: TButton
         Left = 433
-        Top = 521
+        Top = 576
         Width = 80
         Height = 80
         Hint = 'Exportierte der Textlisten aus WinCC flexible'
@@ -200,14 +205,15 @@ object MainForm: TMainForm
         TabOrder = 5
         WordWrap = True
         OnClick = btBasicLoadDescClick
+        ExplicitTop = 521
       end
     end
     object tsInputs: TTabSheet
       Caption = 'Eing'#228'nge'
       ImageIndex = 1
       DesignSize = (
-        895
-        604)
+        984
+        659)
       object lStepInput: TLabel
         Left = 3
         Top = 3
@@ -227,70 +233,66 @@ object MainForm: TMainForm
       end
       object lStepMode: TLabel
         Left = 3
-        Top = 551
-        Width = 73
+        Top = 606
+        Width = 118
         Height = 21
         Anchors = [akLeft, akBottom]
         AutoSize = False
         Caption = 'Schrittmodus:'
         FocusControl = cStepMode
         Layout = tlCenter
-        ExplicitTop = 533
+        ExplicitTop = 564
       end
       object lDuration: TLabel
-        Left = 525
-        Top = 551
-        Width = 33
+        Left = 519
+        Top = 606
+        Width = 47
         Height = 21
-        Anchors = [akRight, akBottom]
+        Anchors = [akLeft, akBottom]
         AutoSize = False
         Caption = 'Dauer:'
         FocusControl = seDuration
         Layout = tlCenter
-        ExplicitLeft = 384
-        ExplicitTop = 533
+        ExplicitTop = 564
       end
       object lNextStep: TLabel
-        Left = 644
-        Top = 551
-        Width = 58
+        Left = 366
+        Top = 606
+        Width = 83
         Height = 21
-        Anchors = [akRight, akBottom]
+        Anchors = [akLeft, akBottom]
         AutoSize = False
         Caption = 'Folgeschritt:'
         FocusControl = seNextStep
         Layout = tlCenter
-        ExplicitLeft = 503
-        ExplicitTop = 533
+        ExplicitTop = 564
       end
       object lDurationUnit: TLabel
-        Left = 628
-        Top = 551
+        Left = 636
+        Top = 606
         Width = 10
         Height = 21
-        Anchors = [akRight, akBottom]
+        Anchors = [akLeft, akBottom]
         AutoSize = False
         Caption = 's'
         Layout = tlCenter
-        ExplicitLeft = 487
-        ExplicitTop = 533
+        ExplicitTop = 564
       end
       object lLoops: TLabel
-        Left = 781
-        Top = 551
+        Left = 519
+        Top = 630
         Width = 47
         Height = 21
-        Anchors = [akRight, akBottom]
+        Anchors = [akLeft, akBottom]
         AutoSize = False
         Caption = 'Schleifen:'
         FocusControl = seLoops
         Layout = tlCenter
-        ExplicitLeft = 640
-        ExplicitTop = 533
+        ExplicitTop = 588
       end
       object lAlarmMode: TLabel
-        Left = 3
-        Top = 575
+        Left = 652
+        Top = 606
         Width = 110
         Height = 21
         Anchors = [akLeft, akBottom]
@@ -298,51 +300,72 @@ object MainForm: TMainForm
         Caption = #220'berwachungsmodus:'
         FocusControl = cAlarmMode
         Layout = tlCenter
-        ExplicitTop = 557
+        ExplicitTop = 564
       end
       object lAlarmTime: TLabel
-        Left = 525
-        Top = 575
-        Width = 92
+        Left = 652
+        Top = 630
+        Width = 110
         Height = 21
-        Anchors = [akRight, akBottom]
+        Anchors = [akLeft, akBottom]
         AutoSize = False
         Caption = #220'berwachungszeit:'
         Layout = tlCenter
-        ExplicitLeft = 384
-        ExplicitTop = 557
+        ExplicitTop = 588
       end
       object lAlarmTimeUnit: TLabel
-        Left = 687
-        Top = 575
-        Width = 10
+        Left = 832
+        Top = 633
+        Width = 7
         Height = 21
-        Anchors = [akRight, akBottom]
+        Anchors = [akLeft, akBottom]
         AutoSize = False
         Caption = 's'
         Layout = tlCenter
-        ExplicitLeft = 546
-        ExplicitTop = 557
+        ExplicitTop = 591
       end
       object lAlarmStep: TLabel
-        Left = 767
-        Top = 575
-        Width = 61
+        Left = 845
+        Top = 633
+        Width = 72
         Height = 21
-        Anchors = [akRight, akBottom]
+        Anchors = [akLeft, akBottom]
         AutoSize = False
         BiDiMode = bdLeftToRight
         Caption = 'Alarmschritt:'
         FocusControl = seAlarmStep
         ParentBiDiMode = False
         Layout = tlCenter
-        ExplicitLeft = 626
-        ExplicitTop = 557
+        ExplicitTop = 591
+      end
+      object lStepModeAlternate: TLabel
+        Left = 3
+        Top = 630
+        Width = 118
+        Height = 21
+        Anchors = [akLeft, akBottom]
+        AutoSize = False
+        Caption = 'Schrittmodus Alternativ:'
+        FocusControl = cStepModeAlternate
+        Layout = tlCenter
+        ExplicitTop = 588
+      end
+      object lNextAlternatStep: TLabel
+        Left = 366
+        Top = 630
+        Width = 83
+        Height = 21
+        Anchors = [akLeft, akBottom]
+        AutoSize = False
+        Caption = 'Alternativschritt:'
+        FocusControl = seNextAlternateStep
+        Layout = tlCenter
+        ExplicitTop = 588
       end
       object eStepNameInput: TEdit
         Left = 103
         Top = 3
-        Width = 789
+        Width = 878
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         Enabled = False
@@ -363,8 +386,8 @@ object MainForm: TMainForm
       object vstInputs: TVirtualStringTree
         Left = 3
         Top = 27
-        Width = 889
-        Height = 410
+        Width = 978
+        Height = 465
         Anchors = [akLeft, akTop, akRight, akBottom]
         DefaultNodeHeight = 24
         Header.AutoSizeIndex = 0
@@ -388,7 +411,7 @@ object MainForm: TMainForm
         Columns = <
           item
             Position = 0
-            Width = 675
+            Width = 764
             WideText = 'Eingang'
           end
           item
@@ -417,8 +440,8 @@ object MainForm: TMainForm
           end>
       end
       object cStepMode: TComboBox
-        Left = 119
-        Top = 551
+        Left = 127
+        Top = 606
         Width = 233
         Height = 21
         Anchors = [akLeft, akBottom]
@@ -434,42 +457,42 @@ object MainForm: TMainForm
           'Ende Reinigung')
       end
       object seDuration: TJvSpinEdit
-        Left = 564
-        Top = 551
+        Left = 572
+        Top = 606
         Width = 58
         Height = 21
         CheckMinValue = True
         Decimal = 0
-        Anchors = [akRight, akBottom]
+        Anchors = [akLeft, akBottom]
         TabOrder = 6
         OnChange = seDurationChange
       end
       object seNextStep: TJvSpinEdit
-        Left = 708
-        Top = 551
+        Left = 455
+        Top = 606
         Width = 58
         Height = 21
         CheckMinValue = True
         Decimal = 0
-        Anchors = [akRight, akBottom]
+        Anchors = [akLeft, akBottom]
         TabOrder = 7
         OnChange = seNextStepChange
       end
       object seLoops: TJvSpinEdit
-        Left = 834
-        Top = 548
+        Left = 572
+        Top = 633
         Width = 58
         Height = 21
         CheckMinValue = True
         Decimal = 0
-        Anchors = [akRight, akBottom]
+        Anchors = [akLeft, akBottom]
         TabOrder = 4
         OnChange = seLoopsChange
       end
       object cAlarmMode: TComboBox
-        Left = 119
-        Top = 575
-        Width = 233
+        Left = 768
+        Top = 606
+        Width = 213
         Height = 21
         Anchors = [akLeft, akBottom]
         TabOrder = 8
@@ -483,31 +506,31 @@ object MainForm: TMainForm
           '')
       end
       object seAlarmTime: TJvSpinEdit
-        Left = 623
-        Top = 575
+        Left = 768
+        Top = 633
         Width = 58
         Height = 21
         CheckMinValue = True
         Decimal = 0
-        Anchors = [akRight, akBottom]
+        Anchors = [akLeft, akBottom]
         TabOrder = 9
         OnChange = seAlarmTimeChange
       end
       object seAlarmStep: TJvSpinEdit
-        Left = 834
-        Top = 575
+        Left = 923
+        Top = 633
         Width = 58
         Height = 21
         CheckMinValue = True
         Decimal = 0
-        Anchors = [akRight, akBottom]
+        Anchors = [akLeft, akBottom]
         TabOrder = 10
         OnChange = seAlarmStepChange
       end
       object vstAnalogInputs: TVirtualStringTree
         Left = 3
-        Top = 443
-        Width = 889
+        Top = 498
+        Width = 978
         Height = 102
         Anchors = [akLeft, akRight, akBottom]
         DefaultNodeHeight = 24
@@ -532,7 +555,7 @@ object MainForm: TMainForm
         Columns = <
           item
             Position = 0
-            Width = 595
+            Width = 684
             WideText = 'Analogeingang'
           end
           item
@@ -560,13 +583,43 @@ object MainForm: TMainForm
             WideText = 'Modus'
           end>
       end
+      object cStepModeAlternate: TComboBox
+        Left = 127
+        Top = 633
+        Width = 233
+        Height = 21
+        Anchors = [akLeft, akBottom]
+        TabOrder = 11
+        Text = 'Inaktiv'
+        OnChange = cStepModeChange
+        Items.Strings = (
+          'Inaktiv'
+          'Eing'#228'nge (UND)'
+          'Eing'#228'nge (ODER)'
+          'Zeit'
+          'Eing'#228'nge UND Zeit'
+          'Eing'#228'nge ODER Zeit'
+          'Quittierung'
+          'Ende Reinigung')
+      end
+      object seNextAlternateStep: TJvSpinEdit
+        Left = 455
+        Top = 633
+        Width = 58
+        Height = 21
+        CheckMinValue = True
+        Decimal = 0
+        Anchors = [akLeft, akBottom]
+        TabOrder = 12
+        OnChange = seNextStepChange
+      end
     end
     object tsOutputs: TTabSheet
       Caption = 'Ausg'#228'nge'
       ImageIndex = 2
       DesignSize = (
-        895
-        604)
+        984
+        659)
       object lStepNameOutput: TLabel
         Left = 3
         Top = 3
@@ -586,7 +639,7 @@ object MainForm: TMainForm
       end
       object lMessage: TLabel
         Left = 3
-        Top = 554
+        Top = 609
         Width = 73
         Height = 21
         Anchors = [akLeft, akBottom]
@@ -598,7 +651,7 @@ object MainForm: TMainForm
       end
       object lIntervall1: TLabel
         Left = 3
-        Top = 578
+        Top = 633
         Width = 73
         Height = 21
         Anchors = [akLeft, akBottom]
@@ -609,8 +662,8 @@ object MainForm: TMainForm
         ExplicitTop = 461
       end
       object lIntervall1Off: TLabel
-        Left = 191
-        Top = 578
+        Left = 159
+        Top = 633
         Width = 26
         Height = 21
         Anchors = [akLeft, akBottom]
@@ -618,11 +671,11 @@ object MainForm: TMainForm
         Caption = 'Aus:'
         FocusControl = seIntervall1Off
         Layout = tlCenter
-        ExplicitTop = 461
+        ExplicitTop = 591
       end
       object lIntervall1OnUnit: TLabel
         Left = 146
-        Top = 578
+        Top = 633
         Width = 10
         Height = 21
         Anchors = [akLeft, akBottom]
@@ -632,65 +685,61 @@ object MainForm: TMainForm
         ExplicitTop = 461
       end
       object lIntervall1OffUnit: TLabel
-        Left = 287
-        Top = 578
+        Left = 255
+        Top = 633
         Width = 10
         Height = 21
         Anchors = [akLeft, akBottom]
         AutoSize = False
         Caption = 's'
         Layout = tlCenter
-        ExplicitTop = 461
+        ExplicitTop = 591
       end
       object lIntervall2: TLabel
-        Left = 534
-        Top = 578
+        Left = 303
+        Top = 633
         Width = 73
         Height = 21
-        Anchors = [akRight, akBottom]
+        Anchors = [akLeft, akBottom]
         AutoSize = False
         Caption = 'Intervall2  Ein:'
         FocusControl = seIntervall2On
         Layout = tlCenter
-        ExplicitLeft = 367
-        ExplicitTop = 461
+        ExplicitTop = 591
       end
       object lIntervall2OnUnit: TLabel
-        Left = 677
-        Top = 578
+        Left = 446
+        Top = 633
         Width = 10
         Height = 21
-        Anchors = [akRight, akBottom]
+        Anchors = [akLeft, akBottom]
         AutoSize = False
         Caption = 's'
         Layout = tlCenter
-        ExplicitLeft = 510
-        ExplicitTop = 461
+        ExplicitTop = 591
       end
       object lIntervall2Off: TLabel
-        Left = 722
-        Top = 578
+        Left = 459
+        Top = 633
         Width = 26
         Height = 21
-        Anchors = [akRight, akBottom]
+        Anchors = [akLeft, akBottom]
         AutoSize = False
         Caption = 'Aus:'
         FocusControl = seIntervall2Off
         Layout = tlCenter
-        ExplicitLeft = 555
-        ExplicitTop = 461
+        ExplicitTop = 591
       end
       object lIntervall2OffUnit: TLabel
-        Left = 818
-        Top = 578
+        Left = 555
+        Top = 633
         Width = 10
         Height = 21
-        Anchors = [akRight, akBottom]
+        Anchors = [akLeft, akBottom]
         AutoSize = False
         Caption = 's'
         Layout = tlCenter
-        ExplicitLeft = 651
-        ExplicitTop = 461
+        ExplicitTop = 591
       end
       object seStepOutput: TJvSpinEdit
         Left = 53
@@ -706,18 +755,19 @@ object MainForm: TMainForm
       object eStepNameOutput: TEdit
         Left = 103
         Top = 3
-        Width = 789
+        Width = 878
         Height = 21
         Anchors = [akLeft, akTop, akRight]
         Enabled = False
         TabOrder = 1
         OnChange = eStepNameChange
+        ExplicitWidth = 789
       end
       object vstOutputs: TVirtualStringTree
         Left = 3
         Top = 27
-        Width = 889
-        Height = 410
+        Width = 978
+        Height = 465
         Anchors = [akLeft, akTop, akRight, akBottom]
         DefaultNodeHeight = 24
         Header.AutoSizeIndex = 0
@@ -739,10 +789,12 @@ object MainForm: TMainForm
         OnGetText = vstOutputsGetText
         OnKeyDown = vstOutputsKeyDown
         OnMouseUp = vstOutputsMouseUp
+        ExplicitWidth = 889
+        ExplicitHeight = 410
         Columns = <
           item
             Position = 0
-            Width = 745
+            Width = 838
             WideText = 'Ausgang'
           end
           item
@@ -754,8 +806,8 @@ object MainForm: TMainForm
       end
       object cMessage: TComboBox
         Left = 82
-        Top = 551
-        Width = 810
+        Top = 606
+        Width = 899
         Height = 21
         Anchors = [akLeft, akRight, akBottom]
         PopupMenu = pmMessage
@@ -765,7 +817,7 @@ object MainForm: TMainForm
       end
       object seIntervall1On: TJvSpinEdit
         Left = 82
-        Top = 578
+        Top = 633
         Width = 58
         Height = 21
         CheckMinValue = True
@@ -773,10 +825,11 @@ object MainForm: TMainForm
         Anchors = [akLeft, akBottom]
         TabOrder = 5
         OnChange = seIntervall1OnChange
+        ExplicitTop = 578
       end
       object seIntervall1Off: TJvSpinEdit
-        Left = 223
-        Top = 578
+        Left = 191
+        Top = 633
         Width = 58
         Height = 21
         CheckMinValue = True
@@ -784,33 +837,36 @@ object MainForm: TMainForm
         Anchors = [akLeft, akBottom]
         TabOrder = 6
         OnChange = seIntervall1OffChange
+        ExplicitTop = 591
       end
       object seIntervall2On: TJvSpinEdit
-        Left = 613
-        Top = 578
+        Left = 382
+        Top = 633
         Width = 58
         Height = 21
         CheckMinValue = True
         Decimal = 1
-        Anchors = [akRight, akBottom]
+        Anchors = [akLeft, akBottom]
         TabOrder = 7
         OnChange = seIntervall2OnChange
+        ExplicitTop = 591
       end
       object seIntervall2Off: TJvSpinEdit
-        Left = 754
-        Top = 578
+        Left = 491
+        Top = 633
         Width = 58
         Height = 21
         CheckMinValue = True
         Decimal = 1
-        Anchors = [akRight, akBottom]
+        Anchors = [akLeft, akBottom]
         TabOrder = 8
         OnChange = seIntervall2OffChange
+        ExplicitTop = 591
       end
       object vstAnalogOutputs: TVirtualStringTree
         Left = 3
-        Top = 443
-        Width = 889
+        Top = 498
+        Width = 978
         Height = 102
         Anchors = [akLeft, akRight, akBottom]
         DefaultNodeHeight = 24
@@ -832,10 +888,12 @@ object MainForm: TMainForm
         OnGetText = vstAnalogOutputsGetText
         OnKeyDown = vstAnalogOutputsKeyDown
         OnMouseUp = vstAnalogOutputsMouseUp
+        ExplicitTop = 443
+        ExplicitWidth = 889
         Columns = <
           item
             Position = 0
-            Width = 750
+            Width = 843
             WideText = 'Analogausgang'
           end
           item
@@ -856,13 +914,13 @@ object MainForm: TMainForm
       ImageIndex = 3
       OnShow = tsCrossesShow
       DesignSize = (
-        895
-        604)
+        984
+        659)
       object vstCrosses: TVirtualStringTree
         Left = 3
         Top = 3
-        Width = 889
-        Height = 512
+        Width = 978
+        Height = 567
         Anchors = [akLeft, akTop, akRight, akBottom]
         Header.AutoSizeIndex = -1
         Header.Font.Charset = DEFAULT_CHARSET
@@ -882,12 +940,14 @@ object MainForm: TMainForm
         OnFreeNode = vstCrossesFreeNode
         OnGetText = vstCrossesGetText
         OnHeaderDrawQueryElements = vstCrossesHeaderDrawQueryElements
+        ExplicitWidth = 889
+        ExplicitHeight = 512
         Columns = <>
         WideDefaultText = ''
       end
       object btPrintGrid: TButton
         Left = 3
-        Top = 521
+        Top = 576
         Width = 80
         Height = 80
         Anchors = [akLeft, akBottom]
@@ -901,10 +961,11 @@ object MainForm: TMainForm
         ParentFont = False
         TabOrder = 1
         OnClick = btPrintGridClick
+        ExplicitTop = 521
       end
       object btExportGrid: TButton
         Left = 89
-        Top = 521
+        Top = 576
         Width = 80
         Height = 80
         Hint = 'In Excel (.csv)'
@@ -921,15 +982,18 @@ object MainForm: TMainForm
         ShowHint = True
         TabOrder = 2
         OnClick = btExportGridClick
+        ExplicitTop = 521
       end
       object gbCrossesLegend: TGroupBox
         Left = 175
-        Top = 521
-        Width = 717
+        Top = 576
+        Width = 806
         Height = 80
         Anchors = [akLeft, akRight, akBottom]
         Caption = ' Legende '
         TabOrder = 3
+        ExplicitTop = 521
+        ExplicitWidth = 717
         object lLegend1: TLabel
           Left = 11
           Top = 19
@@ -960,24 +1024,24 @@ object MainForm: TMainForm
       ImageIndex = 4
       OnShow = tsDiagramShow
       DesignSize = (
-        895
-        604)
+        984
+        659)
       object sbDiagram: TScrollBox
         Left = 3
         Top = 3
-        Width = 889
-        Height = 598
+        Width = 978
+        Height = 653
         HorzScrollBar.Size = 10
         VertScrollBar.Increment = 40
         Anchors = [akLeft, akTop, akRight, akBottom]
         TabOrder = 0
         DesignSize = (
-          868
-          594)
+          957
+          649)
         object iDiagram: TImage
           Left = 3
           Top = 3
-          Width = 778
+          Width = 783
           Height = 6033
           Anchors = [akLeft, akTop, akRight]
           AutoSize = True
@@ -987,7 +1051,7 @@ object MainForm: TMainForm
       end
     end
   end
-  object seProgramNumber: TJvSpinEdit
+  object seBlockNumber: TJvSpinEdit
     Left = 58
     Top = 8
     Width = 44
@@ -996,10 +1060,10 @@ object MainForm: TMainForm
     Value = 1.000000000000000000
     Enabled = False
     TabOrder = 0
-    OnChange = seProgramNumberChange
+    OnChange = seBlockNumberChange
   end
   object seLanguage: TJvSpinEdit
-    Left = 867
+    Left = 956
     Top = 8
     Width = 44
     Height = 21
@@ -1011,7 +1075,7 @@ object MainForm: TMainForm
   object eProgName: TEdit
     Left = 108
     Top = 8
-    Width = 703
+    Width = 792
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     Enabled = False
