@@ -17,7 +17,8 @@ uses
   JvSpin,
   JvToolEdit,
   VTreeHelper,
-  csUtils;
+  csUtils,
+  uCleanProg.Parser;
 
 type
   TPropertyEditLink = class(TInterfacedObject, IVTEditLink)
@@ -63,6 +64,16 @@ type
     function PrepareEdit(Tree : TBaseVirtualTree; Node : PVirtualNode; Column : TColumnIndex) : Boolean;
       override; stdcall;
 
+  end;
+
+  TProgramEditLink = class(TPropertyEditLink)
+  protected
+   FParser : TCleanProgParser;
+  public
+    function EndEdit : Boolean; override; stdcall;
+    function PrepareEdit(Tree : TBaseVirtualTree; Node : PVirtualNode; Column : TColumnIndex) : Boolean;
+      override; stdcall;
+     constructor Create(Parser : TCleanProgParser);
   end;
 
   // ----------------------------------------------------------------------------------------------------------------------
@@ -296,7 +307,7 @@ begin
         Data^.Default.Mode := TComboBox(FEdit).Items.IndexOf(TComboBox(FEdit).Text);
         FTree.InvalidateNode(FNode);
       end;
-          3 :
+    3 :
       begin
         Data^.Alternate.Value := TJvSpinEdit(FEdit).Value;
         FTree.InvalidateNode(FNode);
@@ -374,7 +385,7 @@ begin
           OnKeyDown := EditKeyDown;
         end;
       end;
-      3 :
+    3 :
       begin
         FEdit := TJvSpinEdit.Create(nil);
         with FEdit as TJvSpinEdit do
@@ -502,6 +513,65 @@ begin
             Text := Data^.UnitName;
             OnKeyDown := EditKeyDown;
           end;
+        end;
+      end;
+  else
+    Result := false;
+  end;
+end;
+
+{ TProgramEditLink }
+
+constructor TProgramEditLink.Create(Parser: TCleanProgParser);
+begin
+  inherited Create;
+    FParser := Parser;
+end;
+
+function TProgramEditLink.EndEdit : Boolean;
+var
+  Data : TProgramData;
+begin
+  Result := true;
+  Data := TProgramData(FTree.GetNodeData(FNode)^);
+  case FColumn of
+    1 :
+      begin
+        Data.Block := TComboBox(FEdit).Items.IndexOf(TComboBox(FEdit).Text);
+        FTree.InvalidateNode(FNode);
+      end;
+  end;
+  FEdit.Hide;
+  FTree.SetFocus;
+end;
+
+function TProgramEditLink.PrepareEdit(Tree : TBaseVirtualTree; Node : PVirtualNode; Column : TColumnIndex) : Boolean;
+var
+  Data : TProgramData;
+  i : Integer;
+begin
+  Result := true;
+  FTree := Tree as TVirtualStringTree;
+  FNode := Node;
+  FColumn := Column;
+  FEdit.Free;
+  FEdit := nil;
+  Data := TProgramData(FTree.GetNodeData(Node)^);
+  case FColumn of
+    1 :
+      begin
+        FEdit := TComboBox.Create(nil);
+        with FEdit as TComboBox do
+        begin
+          Visible := false;
+          Parent := Tree;
+          Items.Add('');
+          for i := 0 to FParser.Settings.NumOfBlocks - 1 do
+          begin
+            Items.Add(FParser.BlockNames[i]);
+          end;
+          Text := Items.Strings[Data.Block];
+          OnKeyDown := EditKeyDown;
         end;
       end;
   else

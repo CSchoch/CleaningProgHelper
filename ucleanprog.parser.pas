@@ -16,10 +16,10 @@ uses
   Generics.Collections,
   uCleanProg,
   uCleanProg.Settings,
-    OtlCommon,
+  OtlCommon,
   OtlTask,
   OtlTaskControl,
-   OtlComm;
+  OtlComm;
 
 type
 
@@ -76,6 +76,7 @@ type
     procedure SetStep(index : Integer; const Value : TStep);
     function GetBlockName : string;
     procedure SetBlockName(const Value : string);
+    function GetBlockNames(index : Integer) : string;
     procedure SetSelectedBlock(const Value : Integer);
     function GetDescription : TDescription;
     procedure SetDescription(const Value : TDescription);
@@ -84,6 +85,8 @@ type
     procedure SetLanguage(const Value : Integer);
     function GetStepName(index : Integer) : string;
     procedure SetStepName(index : Integer; const Value : string);
+    function GetProgramStep(index : Integer) : Integer;
+    procedure SetProgramStep(index : Integer; const Value : Integer);
     function GetProgramName : string;
     function GetSelectedProgram : Integer;
     procedure SetProgramName(const Value : string);
@@ -109,8 +112,10 @@ type
     property Step[index : Integer] : TStep read GetStep write SetStep;
     property StepName[index : Integer] : string read GetStepName write SetStepName;
     property Description : TDescription read GetDescription write SetDescription;
+    property ProgramStep[index : Integer] : Integer read GetProgramStep write SetProgramStep;
     property ProgramName : string read GetProgramName write SetProgramName;
     property BlockName : string read GetBlockName write SetBlockName;
+    property BlockNames[index : Integer] : string read GetBlockNames;
     property Language : Integer read GetLanguage write SetLanguage;
     property Picture : TPicture read FPicture write FPicture;
     property PictureExtension : string read FPictureExtension write FPictureExtension;
@@ -1597,11 +1602,31 @@ begin
   end;
 end;
 
+function TCleanProgParser.GetProgramStep(index : Integer) : Integer;
+begin
+  if InRange(FSelectedProgram, 0, Settings.NumOfProgs - 1) and InRange(index, 0, Settings.NumOfProgSteps - 1) then
+  begin
+    Result := FProgram[FSelectedProgram].Step[index].Value;
+  end;
+end;
+
 function TCleanProgParser.GetBlockName : string;
 begin
   if InRange(FSelectedBlock, 0, Settings.NumOfBlocks - 1) then
   begin
     Result := FBlock[FSelectedBlock].Name.Value;
+  end
+  else
+  begin
+    Result := '';
+  end;
+end;
+
+function TCleanProgParser.GetBlockNames(index : Integer) : string;
+begin
+  if InRange(index, 0, Settings.NumOfBlocks - 1) then
+  begin
+    Result := FBlock[index].Name.Value;
   end
   else
   begin
@@ -2188,6 +2213,8 @@ begin
         LoadXMLV11(XML);
       12 :
         LoadXMLV12(XML);
+      13 :
+        LoadXMLV13(XML);
     end;
 
   finally
@@ -3405,6 +3432,14 @@ begin
   end;
 end;
 
+procedure TCleanProgParser.SetProgramStep(index : Integer; const Value : Integer);
+begin
+  if InRange(FSelectedProgram, 0, Settings.NumOfProgs - 1) and InRange(index, 0, Settings.NumOfProgSteps - 1) then
+  begin
+    FProgram[FSelectedProgram].Step[index].Value := Value;
+  end;
+end;
+
 procedure TCleanProgParser.SetBlockName(const Value : string);
 begin
   if InRange(FSelectedBlock, 0, Settings.NumOfBlocks - 1) then
@@ -3417,7 +3452,7 @@ procedure TCleanProgParser.SetSelectedBlock(const Value : Integer);
 begin
   if not InRange(Value, 1, Settings.NumOfBlocks) then
   begin
-    raise TCleanProgException.CreateFmt('Selected Program Out of Range Min: %d, Max: %d, Is: %d',
+    raise TCleanProgException.CreateFmt('Selected Block Out of Range Min: %d, Max: %d, Is: %d',
       [1, Settings.NumOfBlocks, Value]);
   end;
   FSelectedBlock := Value - 1;
@@ -3425,7 +3460,12 @@ end;
 
 procedure TCleanProgParser.SetSelectedProgram(const Value : Integer);
 begin
-
+  if not InRange(Value, 1, Settings.NumOfProgs) then
+  begin
+    raise TCleanProgException.CreateFmt('Selected Program Out of Range Min: %d, Max: %d, Is: %d',
+      [1, Settings.NumOfProgs, Value]);
+  end;
+  FSelectedProgram := Value - 1;
 end;
 
 procedure TCleanProgParser.SetStep(index : Integer; const Value : TStep);
@@ -3843,7 +3883,6 @@ begin
   ParseNextStepAlternate;
   ParseMessage;
   ParseStepTime;
-
 
 end;
 

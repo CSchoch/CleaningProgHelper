@@ -55,7 +55,8 @@ uses
   himXML,
   madExceptVcl,
   jpeg,
-  pngimage;
+  pngimage,
+  SyncObjs;
 
 type
   TMainForm = class(TForm)
@@ -77,17 +78,12 @@ type
     odBasicCsv : TJvOpenDialog;
     bffBasicSaveCsv : TJvBrowseForFolderDialog;
     XPManifest1 : TXPManifest;
-    lProgram : TLabel;
-    seBlockNumber : TJvSpinEdit;
-    eProgName : TEdit;
     lStepInput : TLabel;
     eStepNameInput : TEdit;
     seStepInput : TJvSpinEdit;
     lStepNameOutput : TLabel;
     seStepOutput : TJvSpinEdit;
     eStepNameOutput : TEdit;
-    lLanguage : TLabel;
-    seLanguage : TJvSpinEdit;
     vstInputs : TVirtualStringTree;
     odBasicXML : TJvOpenDialog;
     vstOutputs : TVirtualStringTree;
@@ -155,6 +151,34 @@ type
     cStepModeAlternate : TComboBox;
     lNextAlternatStep : TLabel;
     seNextAlternateStep : TJvSpinEdit;
+    tsProgram : TTabSheet;
+    vstProgram : TVirtualStringTree;
+    eProgName : TEdit;
+    seProgramNumber : TJvSpinEdit;
+    lProgram : TLabel;
+    pmDiagram : TPopupMenu;
+    meSaveDiagram : TMenuItem;
+    sdDiagramExport : TFileSaveDialog;
+    lBlock : TLabel;
+    seBlockNumberInputs : TJvSpinEdit;
+    eBlockNameInputs : TEdit;
+    lLanguageInputs : TLabel;
+    seLanguageInputs : TJvSpinEdit;
+    lBlockOutputs : TLabel;
+    seBlockNumberOutputs : TJvSpinEdit;
+    eBlockNameOutputs : TEdit;
+    lLanguageOutputs : TLabel;
+    seLanguageOutputs : TJvSpinEdit;
+    lBlockCrosses : TLabel;
+    seBlockNumberCrosses : TJvSpinEdit;
+    eBlockNameCrosses : TEdit;
+    lLanguageCrosses : TLabel;
+    seLanguageCrosses : TJvSpinEdit;
+    lBlockDiagram : TLabel;
+    seBlockNumberDiagram : TJvSpinEdit;
+    eBlockNameDiagram : TEdit;
+    lLanguageDiagram : TLabel;
+    seLanguageDiagram : TJvSpinEdit;
     procedure FormCreate(Sender : TObject);
     procedure btBasicImportPictureClick(Sender : TObject);
     procedure acRightExecute(Sender : TObject);
@@ -164,7 +188,7 @@ type
     procedure btBasicImportClick(Sender : TObject);
     procedure btBasicExportClick(Sender : TObject);
     procedure seBlockNumberChange(Sender : TObject);
-    procedure eProgNameChange(Sender : TObject);
+    procedure eBlockNameInputsChange(Sender : TObject);
     procedure seStepChange(Sender : TObject);
     procedure eStepNameChange(Sender : TObject);
     procedure seLanguageChange(Sender : TObject);
@@ -252,11 +276,27 @@ type
     procedure pcPagesChange(Sender : TObject);
     procedure vstCrossesBeforeCellPaint(Sender : TBaseVirtualTree; TargetCanvas : TCanvas; Node : PVirtualNode;
       Column : TColumnIndex; CellPaintMode : TVTCellPaintMode; CellRect : TRect; var ContentRect : TRect);
+    procedure cStepModeAlternateChange(Sender : TObject);
+    procedure seNextAlternateStepChange(Sender : TObject);
+    procedure vstProgramCreateEditor(Sender : TBaseVirtualTree; Node : PVirtualNode; Column : TColumnIndex;
+      out EditLink : IVTEditLink);
+    procedure vstProgramEdited(Sender : TBaseVirtualTree; Node : PVirtualNode; Column : TColumnIndex);
+    procedure vstProgramEditing(Sender : TBaseVirtualTree; Node : PVirtualNode; Column : TColumnIndex;
+      var Allowed : Boolean);
+    procedure vstProgramFreeNode(Sender : TBaseVirtualTree; Node : PVirtualNode);
+    procedure vstProgramGetText(Sender : TBaseVirtualTree; Node : PVirtualNode; Column : TColumnIndex;
+      TextType : TVSTTextType; var CellText : string);
+    procedure vstProgramKeyDown(Sender : TObject; var Key : Word; Shift : TShiftState);
+    procedure vstProgramMouseUp(Sender : TObject; Button : TMouseButton; Shift : TShiftState; X, Y : Integer);
+    procedure seProgramNumberChange(Sender : TObject);
+    procedure eProgNameChange(Sender : TObject);
+    procedure meSaveDiagramClick(Sender : TObject);
 
   private
     Parser : TCleanProgParser;
-    // Visio : TCanvas;
+    SyncGenerateDiagram : THandle;
     procedure ChangeStep(index : Integer);
+    procedure ChangeProgram();
     function GetTextFromCrossesData(Data : TCrossesData; Column : Integer) : String;
     procedure GenerateGrid;
     procedure GenerateDiagram;
@@ -315,14 +355,23 @@ procedure TMainForm.btBasicExportClick(Sender : TObject);
 begin
   btBasicImport.Enabled := False;
   btBasicExport.Enabled := False;
+  btBasicImportPicture.Enabled := False;
   btBasicLoad.Enabled := False;
   btBasicSave.Enabled := False;
-  seBlockNumber.Enabled := False;
-  eProgName.Enabled := False;
+  seBlockNumberInputs.Enabled := False;
+  eBlockNameInputs.Enabled := False;
+  seBlockNumberOutputs.Enabled := False;
+  eBlockNameOutputs.Enabled := False;
+  seBlockNumberCrosses.Enabled := False;
+  eBlockNameCrosses.Enabled := False;
+  seBlockNumberDiagram.Enabled := False;
+  eBlockNameDiagram.Enabled := False;
   seStepInput.Enabled := False;
   eStepNameInput.Enabled := False;
   seStepOutput.Enabled := False;
   eStepNameOutput.Enabled := False;
+  seProgramNumber.Enabled := False;
+  eProgName.Enabled := False;
   meCopyProgram.Enabled := False;
   meCopy.Enabled := False;
   meCut.Enabled := False;
@@ -337,14 +386,23 @@ begin
   finally
     btBasicImport.Enabled := True;
     btBasicExport.Enabled := True;
+    btBasicImportPicture.Enabled := True;
     btBasicLoad.Enabled := True;
     btBasicSave.Enabled := True;
-    seBlockNumber.Enabled := True;
-    eProgName.Enabled := True;
+    seBlockNumberInputs.Enabled := True;
+    eBlockNameInputs.Enabled := True;
+    seBlockNumberOutputs.Enabled := True;
+    eBlockNameOutputs.Enabled := True;
+    seBlockNumberCrosses.Enabled := True;
+    eBlockNameCrosses.Enabled := True;
+    seBlockNumberDiagram.Enabled := True;
+    eBlockNameDiagram.Enabled := True;
     seStepInput.Enabled := True;
     eStepNameInput.Enabled := True;
     seStepOutput.Enabled := True;
     eStepNameOutput.Enabled := True;
+    seProgramNumber.Enabled := True;
+    eProgName.Enabled := True;
     meCopyProgram.Enabled := True;
     meCopy.Enabled := True;
     meCut.Enabled := True;
@@ -359,15 +417,24 @@ var
 begin
   btBasicImport.Enabled := False;
   btBasicExport.Enabled := False;
+  btBasicImportPicture.Enabled := False;
   btBasicLoad.Enabled := False;
   btBasicSave.Enabled := False;
   btBasicLoadDesc.Enabled := False;
-  seBlockNumber.Enabled := False;
-  eProgName.Enabled := False;
+  seBlockNumberInputs.Enabled := False;
+  eBlockNameInputs.Enabled := False;
+  seBlockNumberOutputs.Enabled := False;
+  eBlockNameOutputs.Enabled := False;
+  seBlockNumberCrosses.Enabled := False;
+  eBlockNameCrosses.Enabled := False;
+  seBlockNumberDiagram.Enabled := False;
+  eBlockNameDiagram.Enabled := False;
   seStepInput.Enabled := False;
   eStepNameInput.Enabled := False;
   seStepOutput.Enabled := False;
   eStepNameOutput.Enabled := False;
+  seProgramNumber.Enabled := False;
+  eProgName.Enabled := False;
   meCopyProgram.Enabled := False;
   meCopy.Enabled := False;
   meCut.Enabled := False;
@@ -381,16 +448,30 @@ begin
   finally
     if Parser.Settings.NumOfBlocks > 0 then
     begin
-      seBlockNumber.MaxValue := Parser.Settings.NumOfBlocks;
-      Parser.Language := seLanguage.AsInteger;
-      Parser.SelectedBlock := seBlockNumber.AsInteger;
-      eProgName.Text := Parser.BlockName;
+      seBlockNumberInputs.MaxValue := Parser.Settings.NumOfBlocks;
+      seBlockNumberOutputs.MaxValue := Parser.Settings.NumOfBlocks;
+      seBlockNumberCrosses.MaxValue := Parser.Settings.NumOfBlocks;
+      seBlockNumberDiagram.MaxValue := Parser.Settings.NumOfBlocks;
+      seNextStep.MaxValue := Parser.Settings.NumOfSteps - 1;
+      seNextAlternateStep.MaxValue := Parser.Settings.NumOfSteps - 1;
+      seAlarmStep.MaxValue := Parser.Settings.NumOfSteps - 1;
+      seProgramNumber.MaxValue := Parser.Settings.NumOfProgs;
+      Parser.Language := seLanguageInputs.AsInteger;
+      Parser.SelectedBlock := seBlockNumberInputs.AsInteger;
+      eBlockNameInputs.Text := Parser.BlockName;
       Desc := Parser.Description;
       cMessage.Items.Clear;
       cMessage.Items.AddStrings(Desc.Message);
       ChangeStep(seStepInput.AsInteger);
-      seBlockNumber.Enabled := True;
-      eProgName.Enabled := True;
+      ChangeProgram();
+      seBlockNumberInputs.Enabled := True;
+      eBlockNameInputs.Enabled := True;
+      seBlockNumberOutputs.Enabled := True;
+      eBlockNameOutputs.Enabled := True;
+      seBlockNumberCrosses.Enabled := True;
+      eBlockNameCrosses.Enabled := True;
+      seBlockNumberDiagram.Enabled := True;
+      eBlockNameDiagram.Enabled := True;
       btBasicExport.Enabled := True;
       btBasicSave.Enabled := True;
       btBasicLoadDesc.Enabled := True;
@@ -398,6 +479,8 @@ begin
       eStepNameInput.Enabled := True;
       seStepOutput.Enabled := True;
       eStepNameOutput.Enabled := True;
+      seProgramNumber.Enabled := True;
+      eProgName.Enabled := True;
       meCopyProgram.Enabled := True;
       meCopy.Enabled := True;
       meCut.Enabled := True;
@@ -407,8 +490,10 @@ begin
       pcPages.Pages[2].TabVisible := True;
       pcPages.Pages[3].TabVisible := True;
       pcPages.Pages[4].TabVisible := True;
+      pcPages.Pages[5].TabVisible := Parser.Settings.DataSetNameMode = pnmBlocks;
     end;
     btBasicImport.Enabled := True;
+    btBasicImportPicture.Enabled := True;
     btBasicLoad.Enabled := True;
   end;
 end;
@@ -428,15 +513,24 @@ var
 begin
   btBasicImport.Enabled := False;
   btBasicExport.Enabled := False;
+  btBasicImportPicture.Enabled := False;
   btBasicLoad.Enabled := False;
   btBasicSave.Enabled := False;
   btBasicLoadDesc.Enabled := False;
-  seBlockNumber.Enabled := False;
-  eProgName.Enabled := False;
+  seBlockNumberInputs.Enabled := False;
+  eBlockNameInputs.Enabled := False;
+  seBlockNumberOutputs.Enabled := False;
+  eBlockNameOutputs.Enabled := False;
+  seBlockNumberCrosses.Enabled := False;
+  eBlockNameCrosses.Enabled := False;
+  seBlockNumberDiagram.Enabled := False;
+  eBlockNameDiagram.Enabled := False;
   seStepInput.Enabled := False;
   eStepNameInput.Enabled := False;
   seStepOutput.Enabled := False;
   eStepNameOutput.Enabled := False;
+  seProgramNumber.Enabled := False;
+  eProgName.Enabled := False;
   meCopyProgram.Enabled := False;
   meCopy.Enabled := False;
   meCut.Enabled := False;
@@ -450,16 +544,30 @@ begin
   finally
     if Parser.Settings.NumOfBlocks > 0 then
     begin
-      seBlockNumber.MaxValue := Parser.Settings.NumOfBlocks;
-      seLanguage.AsInteger := Parser.Language;
-      seBlockNumber.AsInteger := Parser.SelectedBlock;
-      eProgName.Text := Parser.BlockName;
+      seBlockNumberInputs.MaxValue := Parser.Settings.NumOfBlocks;
+      seBlockNumberOutputs.MaxValue := Parser.Settings.NumOfBlocks;
+      seBlockNumberCrosses.MaxValue := Parser.Settings.NumOfBlocks;
+      seBlockNumberDiagram.MaxValue := Parser.Settings.NumOfBlocks;
+      seNextStep.MaxValue := Parser.Settings.NumOfSteps - 1;
+      seNextAlternateStep.MaxValue := Parser.Settings.NumOfSteps - 1;
+      seAlarmStep.MaxValue := Parser.Settings.NumOfSteps - 1;
+      seProgramNumber.MaxValue := Parser.Settings.NumOfProgs;
+      seLanguageInputs.AsInteger := Parser.Language;
+      seBlockNumberInputs.AsInteger := Parser.SelectedBlock;
+      eBlockNameInputs.Text := Parser.BlockName;
       Desc := Parser.Description;
       cMessage.Items.Clear;
       cMessage.Items.AddStrings(Desc.Message);
       ChangeStep(seStepInput.AsInteger);
-      seBlockNumber.Enabled := True;
-      eProgName.Enabled := True;
+      ChangeProgram();
+      seBlockNumberInputs.Enabled := True;
+      eBlockNameInputs.Enabled := True;
+      seBlockNumberOutputs.Enabled := True;
+      eBlockNameOutputs.Enabled := True;
+      seBlockNumberCrosses.Enabled := True;
+      eBlockNameCrosses.Enabled := True;
+      seBlockNumberDiagram.Enabled := True;
+      eBlockNameDiagram.Enabled := True;
       btBasicExport.Enabled := True;
       btBasicSave.Enabled := True;
       btBasicLoadDesc.Enabled := True;
@@ -467,6 +575,8 @@ begin
       eStepNameInput.Enabled := True;
       seStepOutput.Enabled := True;
       eStepNameOutput.Enabled := True;
+      seProgramNumber.Enabled := True;
+      eProgName.Enabled := True;
       meCopyProgram.Enabled := True;
       meCopy.Enabled := True;
       meCut.Enabled := True;
@@ -476,8 +586,10 @@ begin
       pcPages.Pages[2].TabVisible := True;
       pcPages.Pages[3].TabVisible := True;
       pcPages.Pages[4].TabVisible := True;
+      pcPages.Pages[5].TabVisible := Parser.Settings.DataSetNameMode = pnmBlocks;
     end;
     btBasicImport.Enabled := True;
+    btBasicImportPicture.Enabled := True;
     btBasicLoad.Enabled := True;
   end;
 end;
@@ -488,15 +600,24 @@ var
 begin
   btBasicImport.Enabled := False;
   btBasicExport.Enabled := False;
+  btBasicImportPicture.Enabled := False;
   btBasicLoad.Enabled := False;
   btBasicSave.Enabled := False;
   btBasicLoadDesc.Enabled := False;
-  seBlockNumber.Enabled := False;
-  eProgName.Enabled := False;
+  seBlockNumberInputs.Enabled := False;
+  eBlockNameInputs.Enabled := False;
+  seBlockNumberOutputs.Enabled := False;
+  eBlockNameOutputs.Enabled := False;
+  seBlockNumberCrosses.Enabled := False;
+  eBlockNameCrosses.Enabled := False;
+  seBlockNumberDiagram.Enabled := False;
+  eBlockNameDiagram.Enabled := False;
   seStepInput.Enabled := False;
   eStepNameInput.Enabled := False;
   seStepOutput.Enabled := False;
   eStepNameOutput.Enabled := False;
+  seProgramNumber.Enabled := False;
+  eProgName.Enabled := False;
   meCopyProgram.Enabled := False;
   meCopy.Enabled := False;
   meCut.Enabled := False;
@@ -514,8 +635,14 @@ begin
       cMessage.Items.Clear;
       cMessage.Items.AddStrings(Desc.Message);
       ChangeStep(seStepInput.AsInteger);
-      seBlockNumber.Enabled := True;
-      eProgName.Enabled := True;
+      seBlockNumberInputs.Enabled := True;
+      eBlockNameInputs.Enabled := True;
+      seBlockNumberOutputs.Enabled := True;
+      eBlockNameOutputs.Enabled := True;
+      seBlockNumberCrosses.Enabled := True;
+      eBlockNameCrosses.Enabled := True;
+      seBlockNumberDiagram.Enabled := True;
+      eBlockNameDiagram.Enabled := True;
       btBasicExport.Enabled := True;
       btBasicSave.Enabled := True;
       btBasicLoadDesc.Enabled := True;
@@ -523,6 +650,8 @@ begin
       eStepNameInput.Enabled := True;
       seStepOutput.Enabled := True;
       eStepNameOutput.Enabled := True;
+      seProgramNumber.Enabled := True;
+      eProgName.Enabled := True;
       meCopyProgram.Enabled := True;
       meCopy.Enabled := True;
       meCut.Enabled := True;
@@ -530,6 +659,7 @@ begin
       meEditDescription.Enabled := True;
     end;
     btBasicImport.Enabled := True;
+    btBasicImportPicture.Enabled := True;
     btBasicLoad.Enabled := True;
   end;
 end;
@@ -538,15 +668,24 @@ procedure TMainForm.btBasicSaveClick(Sender : TObject);
 begin
   btBasicImport.Enabled := False;
   btBasicExport.Enabled := False;
+  btBasicImportPicture.Enabled := False;
   btBasicLoad.Enabled := False;
   btBasicSave.Enabled := False;
   btBasicLoadDesc.Enabled := False;
-  seBlockNumber.Enabled := False;
-  eProgName.Enabled := False;
+  seBlockNumberInputs.Enabled := False;
+  eBlockNameInputs.Enabled := False;
+  seBlockNumberOutputs.Enabled := False;
+  eBlockNameOutputs.Enabled := False;
+  seBlockNumberCrosses.Enabled := False;
+  eBlockNameCrosses.Enabled := False;
+  seBlockNumberDiagram.Enabled := False;
+  eBlockNameDiagram.Enabled := False;
   seStepInput.Enabled := False;
   eStepNameInput.Enabled := False;
   seStepOutput.Enabled := False;
   eStepNameOutput.Enabled := False;
+  seProgramNumber.Enabled := False;
+  eProgName.Enabled := False;
   meCopyProgram.Enabled := False;
   meCopy.Enabled := False;
   meCut.Enabled := False;
@@ -561,15 +700,24 @@ begin
   finally
     btBasicImport.Enabled := True;
     btBasicExport.Enabled := True;
+    btBasicImportPicture.Enabled := True;
     btBasicLoad.Enabled := True;
     btBasicSave.Enabled := True;
     btBasicLoadDesc.Enabled := True;
-    seBlockNumber.Enabled := True;
-    eProgName.Enabled := True;
+    seBlockNumberInputs.Enabled := True;
+    eBlockNameInputs.Enabled := True;
+    seBlockNumberOutputs.Enabled := True;
+    eBlockNameOutputs.Enabled := True;
+    seBlockNumberCrosses.Enabled := True;
+    eBlockNameCrosses.Enabled := True;
+    seBlockNumberDiagram.Enabled := True;
+    eBlockNameDiagram.Enabled := True;
     seStepInput.Enabled := True;
     eStepNameInput.Enabled := True;
     seStepOutput.Enabled := True;
     eStepNameOutput.Enabled := True;
+    seProgramNumber.Enabled := True;
+    eProgName.Enabled := True;
     meCopyProgram.Enabled := True;
     meCopy.Enabled := True;
     meCut.Enabled := True;
@@ -591,7 +739,6 @@ var
   Node : PVirtualNode;
   Data : TCrossesData;
 begin
-
   if sdCrossesExport.Execute and (sdCrossesExport.FileName <> '') then
   begin
     List := TStringList.Create;
@@ -655,9 +802,18 @@ begin
   Parser.Step[seStepInput.AsInteger] := Step;
 end;
 
+procedure TMainForm.eBlockNameInputsChange(Sender : TObject);
+begin
+  eBlockNameInputs.Text := (Sender as TEdit).Text;
+  eBlockNameOutputs.Text := eBlockNameInputs.Text;
+  eBlockNameCrosses.Text := eBlockNameInputs.Text;
+  eBlockNameDiagram.Text := eBlockNameInputs.Text;
+  Parser.BlockName := eBlockNameInputs.Text;
+end;
+
 procedure TMainForm.eProgNameChange(Sender : TObject);
 begin
-  Parser.BlockName := eProgName.Text;
+  Parser.ProgramName := eProgName.Text;
 end;
 
 procedure TMainForm.eStepNameChange(Sender : TObject);
@@ -665,6 +821,29 @@ begin
   eStepNameInput.Text := (Sender as TEdit).Text;
   eStepNameOutput.Text := eStepNameInput.Text;
   Parser.StepName[seStepInput.AsInteger] := eStepNameInput.Text;
+end;
+
+procedure TMainForm.ChangeProgram();
+var
+  i : Integer;
+  Data : TProgramData;
+begin
+  if Assigned(Parser) and (Parser.Settings.NumOfProgs > 0) then
+  begin
+    eProgName.Text := Parser.ProgramName;
+    vstProgram.BeginUpdate;
+    try
+      vstProgram.Clear;
+      for i := 0 to Parser.Settings.NumOfProgSteps - 1 do
+      begin
+        Data := TProgramData.Create;
+        Data.Block := Parser.ProgramStep[i];
+        VSTHAdd(vstProgram, Data);
+      end;
+    finally
+      vstProgram.EndUpdate;
+    end;
+  end;
 end;
 
 procedure TMainForm.ChangeStep(index : Integer);
@@ -685,7 +864,9 @@ begin
     eStepNameOutput.Text := Parser.StepName[Index];
 
     cStepMode.Text := cStepMode.Items.Strings[Step.NextCond.Value];
+    cStepModeAlternate.Text := cStepModeAlternate.Items.Strings[Step.NextCondAlternate.Value];
     seNextStep.Value := Step.NextStep.Value;
+    seNextAlternateStep.Value := Step.NextStepAlternate.Value;
     seDuration.Value := Step.Time.Value;
     seLoops.Value := Step.Loops.Value;
     cAlarmMode.Text := cAlarmMode.Items.Strings[Step.AlarmCond.Value];
@@ -941,6 +1122,12 @@ begin
   end;
 end;
 
+procedure TMainForm.seProgramNumberChange(Sender : TObject);
+begin
+  Parser.SelectedProgram := seProgramNumber.AsInteger;
+  ChangeProgram();
+end;
+
 procedure TMainForm.GenerateDiagram;
   procedure TraceStep(index : Integer; List : TList<Integer>);
   begin
@@ -963,6 +1150,12 @@ procedure TMainForm.GenerateDiagram;
       begin
         TraceStep(index + 1, List);
       end;
+
+      if (Parser.Step[index].NextCondAlternate.Value <> 0) and (Parser.Step[index].NextCondAlternate.Value <> 7) then
+      begin
+        TraceStep(Parser.Step[index].NextStepAlternate.Value, List);
+      end;
+
       case Parser.Step[index].AlarmCond.Value of
         0 :
           ;
@@ -985,63 +1178,104 @@ var
   sGrapicFileName : string;
   sAppName : string;
 begin
-  { TODO : Nicht starten wenn funktion noch läuft }
-  lActiveSteps := TList<Integer>.Create();
-  TraceStep(0, lActiveSteps);
-  slDotFile := TStringList.Create();
-  slDotFile.Add('digraph G {');
-  // for i := 0 to Parser.StepCount - 1 do
-  for i in lActiveSteps do
-  begin
-    slDotFile.Add(Format('%d [label = "(%d) %s"]', [i, i, Parser.StepName[i]]));
-    if Parser.Step[i].NextStep.Value <> 0 then
+  { TODO : Nicht starten wenn funktion noch läuft -> Semaphore geht nicht }
+  // WaitForSingleObject(SyncGenerateDiagram, INFINITE);
+  // OpenSemaphore(SEMAPHORE_ALL_ACCESS, False, 'SyncGenerateDiagram');
+  try
+    lActiveSteps := TList<Integer>.Create();
+    TraceStep(0, lActiveSteps);
+    slDotFile := TStringList.Create();
+    slDotFile.Add('digraph G {');
+    // for i := 0 to Parser.StepCount - 1 do
+    for i in lActiveSteps do
     begin
-      if Parser.Step[i].Loops.Value <> 0 then
+      slDotFile.Add(Format('%d [label = "(%d) %s"]', [i, i, Parser.StepName[i]]));
+      if (Parser.Step[i].NextStep.Value <> 0) or (Parser.Step[i].Loops.Value <> 0) then
       begin
-        slDotFile.Add(Format('%d -> %d [label = "%d mal"]', [i, Parser.Step[i].NextStep.Value,
-          Parser.Step[i].Loops.Value]));
-        slDotFile.Add(Format('%d -> %d', [i, i + 1]));
+        if Parser.Step[i].Loops.Value <> 0 then
+        begin
+          slDotFile.Add(Format('%d -> %d [label = "%d mal"]', [i, Parser.Step[i].NextStep.Value,
+            Parser.Step[i].Loops.Value]));
+          if i < Parser.StepCount - 1 then
+          begin
+            slDotFile.Add(Format('%d -> %d [label = "%s"]',
+              [i, i + 1, cStepMode.Items.Strings[Parser.Step[i].NextCond.Value]]));
+          end
+          else
+          begin
+            slDotFile.Add(Format('%d -> Ende', [i]));
+          end
+        end
+        else
+        begin
+          if Parser.Step[i].NextCond.Value <> 5 then
+          begin
+            slDotFile.Add(Format('%d -> %d [label = "%s"]', [i, Parser.Step[i].NextStep.Value,
+              cStepMode.Items.Strings[Parser.Step[i].NextCond.Value]]));
+          end
+          else
+          begin
+            slDotFile.Add(Format('%d -> Ende', [i]));
+          end;
+        end;
       end
-      else
+      else if (Parser.Step[i].NextCond.Value <> 5) and (i < Parser.StepCount - 1) then
       begin
-        slDotFile.Add(Format('%d -> %d', [i, Parser.Step[i].NextStep.Value]));
+        slDotFile.Add(Format('%d -> %d [label = "%s"]',
+          [i, i + 1, cStepMode.Items.Strings[Parser.Step[i].NextCond.Value]]));
+      end
+      else if (Parser.Step[i].NextCond.Value = 5) or (i >= Parser.StepCount - 1) then
+      begin
+        slDotFile.Add(Format('%d -> Ende', [i]));
       end;
-    end
-    else if (Parser.Step[i].NextCond.Value <> 5) and (i < Parser.StepCount - 1) then
+
+      if (Parser.Step[i].NextCondAlternate.Value <> 0) then
+      begin
+        if (Parser.Step[i].NextCondAlternate.Value <> 7) then
+        begin
+          slDotFile.Add(Format('%d -> %d [label = "Alternativ: %s"]', [i, Parser.Step[i].NextStepAlternate.Value,
+            cStepModeAlternate.Items.Strings[Parser.Step[i].NextCondAlternate.Value]]));
+        end
+        else
+        begin
+          slDotFile.Add(Format('%d -> Ende [label = "Alternativ"]', [i]));
+        end;
+      end;
+
+      case Parser.Step[i].AlarmCond.Value of
+        0 :
+          ;
+        1 :
+          slDotFile.Add(Format('%d -> "%s" [label = "Timeout %ds"]', [i, cAlarmMode.Items[1],
+            Parser.Step[i].ContrTime.Value]));
+        2 :
+          slDotFile.Add(Format('%d -> %d [label = "Timeout %ds"]', [i, i + 1, Parser.Step[i].ContrTime.Value]));
+        3 :
+          slDotFile.Add(Format('%d -> %d [label = "Timeout %ds"]', [i, Parser.Step[i].AlarmStep.Value,
+            Parser.Step[i].ContrTime.Value]));
+      end;
+    end;
+    slDotFile.Add('}');
+    sTempPath := IncludeTrailingPathDelimiter(GetEnvironmentVariable('TEMP')) + 'CleanProgHelper\';
+    ForceDirectories(sTempPath);
+    sTextFileName := sTempPath + 'Diagram.dot';
+    sGrapicFileName := sTempPath + 'Diagram.png';
+    sAppName := ExtractFilePath(Application.ExeName) + 'Graphviz\dot.exe';
+    if DirectoryExists(sTempPath) and FileExists(sAppName) then
     begin
-      slDotFile.Add(Format('%d -> %d', [i, i + 1]));
+      slDotFile.SaveToFile(sTextFileName);
+      RunApplicationAndWait(sAppName, sTextFileName + ' -Tpng -o ' + sGrapicFileName, 20000, SW_HIDE);
+      if FileExists(sGrapicFileName) then
+      begin
+        iDiagram.Picture.LoadFromFile(sGrapicFileName);
+      end;
     end;
-    case Parser.Step[i].AlarmCond.Value of
-      0 :
-        ;
-      1 :
-        slDotFile.Add(Format('%d -> "%s" [label = "Timeout %ds"]', [i, cAlarmMode.Items[1],
-          Parser.Step[i].ContrTime.Value]));
-      2 :
-        slDotFile.Add(Format('%d -> %d [label = "Timeout %ds"]', [i, i + 1, Parser.Step[i].ContrTime.Value]));
-      3 :
-        slDotFile.Add(Format('%d -> %d [label = "Timeout %ds"]', [i, Parser.Step[i].AlarmStep.Value,
-          Parser.Step[i].ContrTime.Value]));
-    end;
+    DeleteFileEx(sTempPath);
+  finally
+    // ReleaseSemaphore(SyncGenerateDiagram, 1, nil);
+    FreeAndNil(slDotFile);
+    FreeAndNil(lActiveSteps);
   end;
-  slDotFile.Add('}');
-  sTempPath := IncludeTrailingPathDelimiter(GetEnvironmentVariable('TEMP')) + 'CleanProgHelper\';
-  ForceDirectories(sTempPath);
-  sTextFileName := sTempPath + 'Diagram.dot';
-  sGrapicFileName := sTempPath + 'Diagram.png';
-  sAppName := ExtractFilePath(Application.ExeName) + 'Graphviz\dot.exe';
-  if DirectoryExists(sTempPath) and FileExists(sAppName) then
-  begin
-    slDotFile.SaveToFile(sTextFileName);
-    RunApplicationAndWait(sAppName, sTextFileName + ' -Tpng -o ' + sGrapicFileName, 20000, SW_HIDE);
-    if FileExists(sGrapicFileName) then
-    begin
-      iDiagram.Picture.LoadFromFile(sGrapicFileName);
-    end;
-  end;
-  DeleteFileEx(sTempPath);
-  FreeAndNil(slDotFile);
-  FreeAndNil(lActiveSteps);
 end;
 
 procedure TMainForm.GenerateGrid;
@@ -1263,6 +1497,24 @@ begin
   Parser.Description := Desc;
 end;
 
+procedure TMainForm.cStepModeAlternateChange(Sender : TObject);
+var
+  Step : TStep;
+  i : Integer;
+begin
+  Step := Parser.Step[seStepInput.AsInteger];
+  i := cStepModeAlternate.Items.IndexOf(cStepModeAlternate.Text);
+  if i <> - 1 then
+  begin
+    Step.NextCondAlternate.Value := i;
+  end
+  else
+  begin
+    cStepModeAlternate.Text := cStepModeAlternate.Items.Strings[Step.NextStepAlternate.Value];
+  end;
+  Parser.Step[seStepInput.AsInteger] := Step;
+end;
+
 procedure TMainForm.cStepModeChange(Sender : TObject);
 var
   Step : TStep;
@@ -1285,6 +1537,7 @@ procedure TMainForm.FormCreate(Sender : TObject);
 var
   Settings : TSettings;
   FileName : string;
+  Data : TProgramData;
 begin
   Settings := TSettings.Create();
   FileName := ExtractFilePath(Application.ExeName) + 'Settings.xml';
@@ -1297,7 +1550,11 @@ begin
   pcPages.Pages[2].TabVisible := False;
   pcPages.Pages[3].TabVisible := False;
   pcPages.Pages[4].TabVisible := False;
-  seLanguage.MaxValue := Settings.NumOfLangs;
+  pcPages.Pages[5].TabVisible := False;
+  seLanguageInputs.MaxValue := Settings.NumOfLangs;
+  seLanguageOutputs.MaxValue := Settings.NumOfLangs;
+  seLanguageCrosses.MaxValue := Settings.NumOfLangs;
+  seLanguageDiagram.MaxValue := Settings.NumOfLangs;
   seStepInput.MaxValue := Settings.NumOfSteps - 1;
   seStepOutput.MaxValue := Settings.NumOfSteps - 1;
   vstInputs.NodeDataSize := SizeOf(TInputData);
@@ -1305,6 +1562,9 @@ begin
   vstOutputs.NodeDataSize := SizeOf(TOutputData);
   vstAnalogOutputs.NodeDataSize := SizeOf(TAnalogOutputData);
   vstCrosses.NodeDataSize := SizeOf(TCrossesData);
+  vstProgram.NodeDataSize := SizeOf(TProgramData);
+  Data := TProgramData.Create;
+  VSTHAdd(vstProgram, Data);
   cMessage.Items.Add('');
   case Settings.DataSetNameMode of
     pnmSingleDataSet :
@@ -1314,6 +1574,10 @@ begin
         vstInputs.Header.Columns[4].Options := vstInputs.Header.Columns[4].Options - [coVisible];
         vstAnalogInputs.Header.Columns[3].Options := vstAnalogInputs.Header.Columns[3].Options - [coVisible];
         vstAnalogInputs.Header.Columns[4].Options := vstAnalogInputs.Header.Columns[4].Options - [coVisible];
+        lStepModeAlternate.Visible := False;
+        cStepModeAlternate.Visible := False;
+        lNextAlternatStep.Visible := False;
+        seNextAlternateStep.Visible := False;
       end;
     pnmMultipleDataSets :
       begin
@@ -1322,6 +1586,10 @@ begin
         vstInputs.Header.Columns[4].Options := vstInputs.Header.Columns[4].Options - [coVisible];
         vstAnalogInputs.Header.Columns[3].Options := vstAnalogInputs.Header.Columns[3].Options - [coVisible];
         vstAnalogInputs.Header.Columns[4].Options := vstAnalogInputs.Header.Columns[4].Options - [coVisible];
+        lStepModeAlternate.Visible := False;
+        cStepModeAlternate.Visible := False;
+        lNextAlternatStep.Visible := False;
+        seNextAlternateStep.Visible := False;
       end;
     pnmBlocks :
       begin
@@ -1337,7 +1605,7 @@ begin
   end;
   Parser.Picture := iBasic.Picture;
   Parser.OnSelectLangIndex := OnSelectLangIndex;
-  // end;
+  SyncGenerateDiagram := CreateSemaphore(nil, 1, 1, 'SyncGenerateDiagram');
 end;
 
 procedure TMainForm.FormDestroy(Sender : TObject);
@@ -1483,6 +1751,15 @@ begin
   ChangeStep(seStepInput.AsInteger);
 end;
 
+procedure TMainForm.meSaveDiagramClick(Sender : TObject);
+begin
+  if sdDiagramExport.Execute and (sdDiagramExport.FileName <> '') then
+  begin
+    CreateDirectoryRecurse('', ExtractFilePath(sdDiagramExport.FileName), nil);
+    iDiagram.Picture.SaveToFile(sdDiagramExport.FileName);
+  end;
+end;
+
 procedure TMainForm.OnSelectLangIndex(Sender : TObject; LangDesc : TStringList; out Indizes : TList<Integer>);
 var
   SelectLangIndex : TSelectLangIndex;
@@ -1573,31 +1850,38 @@ procedure TMainForm.seLanguageChange(Sender : TObject);
 var
   Desc : TDescription;
 begin
-  if Assigned(Parser) then
-  begin
-    Parser.Language := seLanguage.AsInteger;
-    Desc := Parser.Description;
-    cMessage.Items.Clear;
-    cMessage.Items.AddStrings(Desc.Message);
-    if Parser.Settings.DataSetNameMode = pnmBlocks then
+  try
+    if Assigned(Parser) then
     begin
-      cStepMode.Items.Clear();
-      cStepMode.Items.Add('Eingänge (UND)');
-      cStepMode.Items.Add('Zeit');
-      cStepMode.Items.Add('Eingänge UND Zeit');
-      cStepMode.Items.Add('Eingänge ODER Zeit');
-      cStepMode.Items.Add('Quittierung');
-      cStepMode.Items.Add('Ende Reinigung');
+      (Sender as TJvSpinEdit).Enabled := False;
+      seLanguageInputs.OnChange := nil;
+      seLanguageOutputs.OnChange := nil;
+      seLanguageCrosses.OnChange := nil;
+      seLanguageDiagram.OnChange := nil;
+      seLanguageInputs.Value := (Sender as TJvSpinEdit).Value;
+      seLanguageOutputs.Value := seLanguageInputs.Value;
+      seLanguageCrosses.Value := seLanguageInputs.Value;
+      seLanguageDiagram.Value := seLanguageInputs.Value;
+      Parser.Language := seLanguageInputs.AsInteger;
+      Desc := Parser.Description;
+      cMessage.Items.Clear;
+      cMessage.Items.AddStrings(Desc.Message);
+      ChangeStep(seStepInput.AsInteger);
     end;
-    ChangeStep(seStepInput.AsInteger);
-  end;
-  if pcPages.ActivePage = tsCrosses then
-  begin
-    GenerateGrid;
-  end;
-  if pcPages.ActivePage = tsDiagram then
-  begin
-    GenerateDiagram;
+    if pcPages.ActivePage = tsCrosses then
+    begin
+      GenerateGrid;
+    end;
+    if pcPages.ActivePage = tsDiagram then
+    begin
+      GenerateDiagram;
+    end;
+  finally
+    (Sender as TJvSpinEdit).Enabled := True;
+    seLanguageInputs.OnChange := seLanguageChange;
+    seLanguageOutputs.OnChange := seLanguageChange;
+    seLanguageCrosses.OnChange := seLanguageChange;
+    seLanguageDiagram.OnChange := seLanguageChange;
   end;
 end;
 
@@ -1607,6 +1891,15 @@ var
 begin
   Step := Parser.Step[seStepInput.AsInteger];
   Step.Loops.Value := seLoops.AsInteger;
+  Parser.Step[seStepInput.AsInteger] := Step;
+end;
+
+procedure TMainForm.seNextAlternateStepChange(Sender : TObject);
+var
+  Step : TStep;
+begin
+  Step := Parser.Step[seStepInput.AsInteger];
+  Step.NextStepAlternate.Value := seNextAlternateStep.AsInteger;
   Parser.Step[seStepInput.AsInteger] := Step;
 end;
 
@@ -1621,16 +1914,36 @@ end;
 
 procedure TMainForm.seBlockNumberChange(Sender : TObject);
 begin
-  Parser.SelectedBlock := seBlockNumber.AsInteger;
-  eProgName.Text := Parser.BlockName;
-  ChangeStep(seStepInput.AsInteger);
-  if pcPages.ActivePage = tsCrosses then
-  begin
-    GenerateGrid;
-  end;
-  if pcPages.ActivePage = tsDiagram then
-  begin
-    GenerateDiagram;
+  try
+    (Sender as TJvSpinEdit).Enabled := False;
+    seBlockNumberInputs.OnChange := nil;
+    seBlockNumberOutputs.OnChange := nil;
+    seBlockNumberCrosses.OnChange := nil;
+    seBlockNumberDiagram.OnChange := nil;
+    seBlockNumberInputs.Value := (Sender as TJvSpinEdit).Value;
+    seBlockNumberOutputs.Value := seBlockNumberInputs.Value;
+    seBlockNumberCrosses.Value := seBlockNumberInputs.Value;
+    seBlockNumberDiagram.Value := seBlockNumberInputs.Value;
+    Parser.SelectedBlock := seBlockNumberInputs.AsInteger;
+    eBlockNameInputs.Text := Parser.BlockName;
+    eBlockNameOutputs.Text := Parser.BlockName;
+    eBlockNameCrosses.Text := Parser.BlockName;
+    eBlockNameDiagram.Text := Parser.BlockName;
+    ChangeStep(seStepInput.AsInteger);
+    if pcPages.ActivePage = tsCrosses then
+    begin
+      GenerateGrid;
+    end;
+    if pcPages.ActivePage = tsDiagram then
+    begin
+      GenerateDiagram;
+    end;
+  finally
+    (Sender as TJvSpinEdit).Enabled := True;
+    seBlockNumberInputs.OnChange := seBlockNumberChange;
+    seBlockNumberOutputs.OnChange := seBlockNumberChange;
+    seBlockNumberCrosses.OnChange := seBlockNumberChange;
+    seBlockNumberDiagram.OnChange := seBlockNumberChange;
   end;
 end;
 
@@ -2387,6 +2700,100 @@ begin
         end;
       1 :
         vstOutputs.EditNode(Node, Column);
+    end;
+  end;
+end;
+
+procedure TMainForm.vstProgramCreateEditor(Sender : TBaseVirtualTree; Node : PVirtualNode; Column : TColumnIndex;
+  out EditLink : IVTEditLink);
+begin
+  EditLink := TProgramEditLink.Create(Parser);
+end;
+
+procedure TMainForm.vstProgramEdited(Sender : TBaseVirtualTree; Node : PVirtualNode; Column : TColumnIndex);
+var
+  Data : TProgramData;
+begin
+  Data := TProgramData(vstProgram.GetNodeData(Node)^);
+  if Assigned(Data) then
+  begin
+    case Column of
+      1 :
+        begin
+          Parser.ProgramStep[Node.Index] := Data.Block;
+        end;
+    end;
+  end;
+end;
+
+procedure TMainForm.vstProgramEditing(Sender : TBaseVirtualTree; Node : PVirtualNode; Column : TColumnIndex;
+  var Allowed : Boolean);
+begin
+  Allowed := Column = 1;
+end;
+
+procedure TMainForm.vstProgramFreeNode(Sender : TBaseVirtualTree; Node : PVirtualNode);
+var
+  Data : TProgramData;
+begin
+  Data := TProgramData(vstProgram.GetNodeData(Node)^);
+  if Assigned(Data) then
+  begin
+    FreeAndNil(Data);
+  end;
+end;
+
+procedure TMainForm.vstProgramGetText(Sender : TBaseVirtualTree; Node : PVirtualNode; Column : TColumnIndex;
+  TextType : TVSTTextType; var CellText : string);
+var
+  Data : TProgramData;
+begin
+  Data := TProgramData(vstProgram.GetNodeData(Node)^);
+  if Assigned(Data) then
+  begin
+    case Column of
+      0 :
+        CellText := Format('%d.', [Node.Index + 1]);
+
+      1 :
+        if Data.Block > 0 then
+        begin
+          CellText := Parser.BlockNames[Data.Block - 1];
+        end
+        else
+        begin
+          CellText := '';
+        end;
+    end;
+  end;
+
+end;
+
+procedure TMainForm.vstProgramKeyDown(Sender : TObject; var Key : Word; Shift : TShiftState);
+begin
+  if Key = VK_RETURN then
+  begin
+    vstProgram.FocusedNode := vstProgram.GetNext(vstProgram.FocusedNode);
+    if vstProgram.FocusedNode <> nil then
+    begin
+      vstProgram.Selected[vstProgram.FocusedNode] := True;
+      vstProgram.EditNode(vstProgram.FocusedNode, 0);
+    end;
+  end;
+end;
+
+procedure TMainForm.vstProgramMouseUp(Sender : TObject; Button : TMouseButton; Shift : TShiftState; X, Y : Integer);
+var
+  Node : PVirtualNode;
+  Column : Integer;
+begin
+  Node := vstProgram.GetNodeAt(X, Y);
+  Column := vstProgram.Header.Columns.ColumnFromPosition(Point(X, Y));
+  if Assigned(Node) then
+  begin
+    case Column of
+      1 :
+        vstProgram.EditNode(Node, Column);
     end;
   end;
 end;

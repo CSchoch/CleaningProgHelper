@@ -23,47 +23,11 @@ object MainForm: TMainForm
     728)
   PixelsPerInch = 96
   TextHeight = 13
-  object lLanguage: TLabel
-    Left = 906
-    Top = 8
-    Width = 44
-    Height = 21
-    Anchors = [akTop, akRight]
-    AutoSize = False
-    Caption = 'Sprache:'
-    FocusControl = seLanguage
-    Font.Charset = DEFAULT_CHARSET
-    Font.Color = clWindowText
-    Font.Height = -11
-    Font.Name = 'Tahoma'
-    Font.Style = []
-    ParentFont = False
-    Transparent = True
-    Layout = tlCenter
-    ExplicitLeft = 650
-  end
-  object lProgram: TLabel
-    Left = 8
-    Top = 8
-    Width = 44
-    Height = 21
-    AutoSize = False
-    Caption = 'Program:'
-    FocusControl = seBlockNumber
-    Font.Charset = DEFAULT_CHARSET
-    Font.Color = clWindowText
-    Font.Height = -11
-    Font.Name = 'Tahoma'
-    Font.Style = []
-    ParentFont = False
-    Transparent = True
-    Layout = tlCenter
-  end
   object pcPages: TPageControl
     Left = 8
-    Top = 32
+    Top = 8
     Width = 992
-    Height = 687
+    Height = 711
     ActivePage = tsBasic
     Anchors = [akLeft, akTop, akRight, akBottom]
     Font.Charset = DEFAULT_CHARSET
@@ -73,19 +37,19 @@ object MainForm: TMainForm
     Font.Style = []
     HotTrack = True
     ParentFont = False
-    TabOrder = 3
+    TabOrder = 0
     OnChange = pcPagesChange
     OnChanging = pcPagesChanging
     object tsBasic: TTabSheet
       Caption = 'Grundbild'
       DesignSize = (
         984
-        659)
+        683)
       object iBasic: TImage
         Left = 3
         Top = 3
         Width = 978
-        Height = 567
+        Height = 591
         Anchors = [akLeft, akTop, akRight, akBottom]
         Center = True
         Proportional = True
@@ -95,7 +59,7 @@ object MainForm: TMainForm
       end
       object btBasicImport: TBitBtn
         Left = 3
-        Top = 576
+        Top = 600
         Width = 80
         Height = 80
         Hint = 'Exportierte Dateien vom HMI'
@@ -109,7 +73,7 @@ object MainForm: TMainForm
       end
       object btBasicExport: TBitBtn
         Left = 89
-        Top = 576
+        Top = 600
         Width = 80
         Height = 80
         Hint = 'Dateien f'#252'r den Import im HMI'
@@ -123,7 +87,7 @@ object MainForm: TMainForm
       end
       object btBasicImportPicture: TButton
         Left = 175
-        Top = 576
+        Top = 600
         Width = 80
         Height = 80
         Hint = 'Screenshot f'#252'rs Grundbild'
@@ -137,7 +101,7 @@ object MainForm: TMainForm
       end
       object btBasicLoad: TButton
         Left = 261
-        Top = 576
+        Top = 600
         Width = 80
         Height = 80
         Hint = 'Eigenes Format (.xml)'
@@ -151,7 +115,7 @@ object MainForm: TMainForm
       end
       object btBasicSave: TButton
         Left = 347
-        Top = 576
+        Top = 600
         Width = 80
         Height = 80
         Hint = 'Eigenes Format (.xml)'
@@ -166,7 +130,7 @@ object MainForm: TMainForm
       end
       object btBasicLoadDesc: TButton
         Left = 433
-        Top = 576
+        Top = 600
         Width = 80
         Height = 80
         Hint = 'Exportierte der Textlisten aus WinCC flexible'
@@ -185,10 +149,10 @@ object MainForm: TMainForm
       ImageIndex = 1
       DesignSize = (
         984
-        659)
+        683)
       object lStepInput: TLabel
         Left = 3
-        Top = 3
+        Top = 27
         Width = 44
         Height = 21
         AutoSize = False
@@ -205,7 +169,7 @@ object MainForm: TMainForm
       end
       object lStepMode: TLabel
         Left = 3
-        Top = 606
+        Top = 630
         Width = 118
         Height = 21
         Anchors = [akLeft, akBottom]
@@ -217,7 +181,7 @@ object MainForm: TMainForm
       end
       object lDuration: TLabel
         Left = 519
-        Top = 606
+        Top = 630
         Width = 47
         Height = 21
         Anchors = [akLeft, akBottom]
@@ -229,7 +193,7 @@ object MainForm: TMainForm
       end
       object lNextStep: TLabel
         Left = 366
-        Top = 606
+        Top = 630
         Width = 83
         Height = 21
         Anchors = [akLeft, akBottom]
@@ -241,7 +205,7 @@ object MainForm: TMainForm
       end
       object lDurationUnit: TLabel
         Left = 636
-        Top = 606
+        Top = 630
         Width = 10
         Height = 21
         Anchors = [akLeft, akBottom]
@@ -252,7 +216,7 @@ object MainForm: TMainForm
       end
       object lLoops: TLabel
         Left = 519
-        Top = 630
+        Top = 654
         Width = 47
         Height = 21
         Anchors = [akLeft, akBottom]
@@ -264,7 +228,7 @@ object MainForm: TMainForm
       end
       object lAlarmMode: TLabel
         Left = 652
-        Top = 606
+        Top = 630
         Width = 110
         Height = 21
         Anchors = [akLeft, akBottom]
@@ -276,7 +240,7 @@ object MainForm: TMainForm
       end
       object lAlarmTime: TLabel
         Left = 652
-        Top = 630
+        Top = 654
         Width = 110
         Height = 21
         Anchors = [akLeft, akBottom]
@@ -287,7 +251,7 @@ object MainForm: TMainForm
       end
       object lAlarmTimeUnit: TLabel
         Left = 832
-        Top = 633
+        Top = 657
         Width = 7
         Height = 21
         Anchors = [akLeft, akBottom]
@@ -298,7 +262,7 @@ object MainForm: TMainForm
       end
       object lAlarmStep: TLabel
         Left = 845
-        Top = 633
+        Top = 657
         Width = 72
         Height = 21
         Anchors = [akLeft, akBottom]
@@ -312,7 +276,7 @@ object MainForm: TMainForm
       end
       object lStepModeAlternate: TLabel
         Left = 3
-        Top = 630
+        Top = 654
         Width = 118
         Height = 21
         Anchors = [akLeft, akBottom]
@@ -324,7 +288,7 @@ object MainForm: TMainForm
       end
       object lNextAlternatStep: TLabel
         Left = 366
-        Top = 630
+        Top = 654
         Width = 83
         Height = 21
         Anchors = [akLeft, akBottom]
@@ -334,9 +298,44 @@ object MainForm: TMainForm
         Layout = tlCenter
         ExplicitTop = 588
       end
+      object lBlock: TLabel
+        Left = 3
+        Top = 3
+        Width = 44
+        Height = 21
+        AutoSize = False
+        Caption = 'Block:'
+        FocusControl = seBlockNumberInputs
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -11
+        Font.Name = 'Tahoma'
+        Font.Style = []
+        ParentFont = False
+        Transparent = True
+        Layout = tlCenter
+      end
+      object lLanguageInputs: TLabel
+        Left = 887
+        Top = 2
+        Width = 44
+        Height = 21
+        Anchors = [akTop, akRight]
+        AutoSize = False
+        Caption = 'Sprache:'
+        FocusControl = seLanguageInputs
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -11
+        Font.Name = 'Tahoma'
+        Font.Style = []
+        ParentFont = False
+        Transparent = True
+        Layout = tlCenter
+      end
       object eStepNameInput: TEdit
         Left = 103
-        Top = 3
+        Top = 30
         Width = 878
         Height = 21
         Anchors = [akLeft, akTop, akRight]
@@ -346,7 +345,7 @@ object MainForm: TMainForm
       end
       object seStepInput: TJvSpinEdit
         Left = 53
-        Top = 3
+        Top = 30
         Width = 44
         Height = 21
         CheckMinValue = True
@@ -357,9 +356,9 @@ object MainForm: TMainForm
       end
       object vstInputs: TVirtualStringTree
         Left = 3
-        Top = 27
+        Top = 57
         Width = 978
-        Height = 465
+        Height = 459
         Anchors = [akLeft, akTop, akRight, akBottom]
         DefaultNodeHeight = 24
         Header.AutoSizeIndex = 0
@@ -413,7 +412,7 @@ object MainForm: TMainForm
       end
       object cStepMode: TComboBox
         Left = 127
-        Top = 606
+        Top = 630
         Width = 233
         Height = 21
         Anchors = [akLeft, akBottom]
@@ -430,7 +429,7 @@ object MainForm: TMainForm
       end
       object seDuration: TJvSpinEdit
         Left = 572
-        Top = 606
+        Top = 630
         Width = 58
         Height = 21
         CheckMinValue = True
@@ -441,10 +440,11 @@ object MainForm: TMainForm
       end
       object seNextStep: TJvSpinEdit
         Left = 455
-        Top = 606
+        Top = 630
         Width = 58
         Height = 21
         CheckMinValue = True
+        CheckMaxValue = True
         Decimal = 0
         Anchors = [akLeft, akBottom]
         TabOrder = 7
@@ -452,7 +452,7 @@ object MainForm: TMainForm
       end
       object seLoops: TJvSpinEdit
         Left = 572
-        Top = 633
+        Top = 657
         Width = 58
         Height = 21
         CheckMinValue = True
@@ -463,7 +463,7 @@ object MainForm: TMainForm
       end
       object cAlarmMode: TComboBox
         Left = 768
-        Top = 606
+        Top = 630
         Width = 213
         Height = 21
         Anchors = [akLeft, akBottom]
@@ -479,7 +479,7 @@ object MainForm: TMainForm
       end
       object seAlarmTime: TJvSpinEdit
         Left = 768
-        Top = 633
+        Top = 657
         Width = 58
         Height = 21
         CheckMinValue = True
@@ -490,10 +490,11 @@ object MainForm: TMainForm
       end
       object seAlarmStep: TJvSpinEdit
         Left = 923
-        Top = 633
+        Top = 657
         Width = 58
         Height = 21
         CheckMinValue = True
+        CheckMaxValue = True
         Decimal = 0
         Anchors = [akLeft, akBottom]
         TabOrder = 10
@@ -501,7 +502,7 @@ object MainForm: TMainForm
       end
       object vstAnalogInputs: TVirtualStringTree
         Left = 3
-        Top = 498
+        Top = 522
         Width = 978
         Height = 102
         Anchors = [akLeft, akRight, akBottom]
@@ -557,13 +558,13 @@ object MainForm: TMainForm
       end
       object cStepModeAlternate: TComboBox
         Left = 127
-        Top = 633
+        Top = 657
         Width = 233
         Height = 21
         Anchors = [akLeft, akBottom]
         TabOrder = 11
         Text = 'Inaktiv'
-        OnChange = cStepModeChange
+        OnChange = cStepModeAlternateChange
         Items.Strings = (
           'Inaktiv'
           'Eing'#228'nge (UND)'
@@ -576,14 +577,46 @@ object MainForm: TMainForm
       end
       object seNextAlternateStep: TJvSpinEdit
         Left = 455
-        Top = 633
+        Top = 657
         Width = 58
         Height = 21
         CheckMinValue = True
+        CheckMaxValue = True
         Decimal = 0
         Anchors = [akLeft, akBottom]
         TabOrder = 12
-        OnChange = seNextStepChange
+        OnChange = seNextAlternateStepChange
+      end
+      object seBlockNumberInputs: TJvSpinEdit
+        Left = 53
+        Top = 3
+        Width = 44
+        Height = 21
+        MinValue = 1.000000000000000000
+        Enabled = False
+        TabOrder = 13
+        OnChange = seBlockNumberChange
+      end
+      object eBlockNameInputs: TEdit
+        Left = 103
+        Top = 3
+        Width = 778
+        Height = 21
+        Anchors = [akLeft, akTop, akRight]
+        Enabled = False
+        TabOrder = 14
+        OnChange = eBlockNameInputsChange
+      end
+      object seLanguageInputs: TJvSpinEdit
+        Left = 937
+        Top = 3
+        Width = 44
+        Height = 21
+        MinValue = 1.000000000000000000
+        Value = 1.000000000000000000
+        Anchors = [akTop, akRight]
+        TabOrder = 15
+        OnChange = seLanguageChange
       end
     end
     object tsOutputs: TTabSheet
@@ -591,10 +624,10 @@ object MainForm: TMainForm
       ImageIndex = 2
       DesignSize = (
         984
-        659)
+        683)
       object lStepNameOutput: TLabel
         Left = 3
-        Top = 3
+        Top = 27
         Width = 44
         Height = 21
         AutoSize = False
@@ -611,7 +644,7 @@ object MainForm: TMainForm
       end
       object lMessage: TLabel
         Left = 3
-        Top = 609
+        Top = 633
         Width = 73
         Height = 21
         Anchors = [akLeft, akBottom]
@@ -623,7 +656,7 @@ object MainForm: TMainForm
       end
       object lIntervall1: TLabel
         Left = 3
-        Top = 633
+        Top = 657
         Width = 73
         Height = 21
         Anchors = [akLeft, akBottom]
@@ -635,7 +668,7 @@ object MainForm: TMainForm
       end
       object lIntervall1Off: TLabel
         Left = 159
-        Top = 633
+        Top = 657
         Width = 26
         Height = 21
         Anchors = [akLeft, akBottom]
@@ -647,7 +680,7 @@ object MainForm: TMainForm
       end
       object lIntervall1OnUnit: TLabel
         Left = 146
-        Top = 633
+        Top = 657
         Width = 10
         Height = 21
         Anchors = [akLeft, akBottom]
@@ -658,7 +691,7 @@ object MainForm: TMainForm
       end
       object lIntervall1OffUnit: TLabel
         Left = 255
-        Top = 633
+        Top = 657
         Width = 10
         Height = 21
         Anchors = [akLeft, akBottom]
@@ -669,7 +702,7 @@ object MainForm: TMainForm
       end
       object lIntervall2: TLabel
         Left = 303
-        Top = 633
+        Top = 657
         Width = 73
         Height = 21
         Anchors = [akLeft, akBottom]
@@ -681,7 +714,7 @@ object MainForm: TMainForm
       end
       object lIntervall2OnUnit: TLabel
         Left = 446
-        Top = 633
+        Top = 657
         Width = 10
         Height = 21
         Anchors = [akLeft, akBottom]
@@ -692,7 +725,7 @@ object MainForm: TMainForm
       end
       object lIntervall2Off: TLabel
         Left = 459
-        Top = 633
+        Top = 657
         Width = 26
         Height = 21
         Anchors = [akLeft, akBottom]
@@ -704,7 +737,7 @@ object MainForm: TMainForm
       end
       object lIntervall2OffUnit: TLabel
         Left = 555
-        Top = 633
+        Top = 657
         Width = 10
         Height = 21
         Anchors = [akLeft, akBottom]
@@ -713,9 +746,44 @@ object MainForm: TMainForm
         Layout = tlCenter
         ExplicitTop = 591
       end
+      object lBlockOutputs: TLabel
+        Left = 3
+        Top = 3
+        Width = 44
+        Height = 21
+        AutoSize = False
+        Caption = 'Block:'
+        FocusControl = seBlockNumberOutputs
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -11
+        Font.Name = 'Tahoma'
+        Font.Style = []
+        ParentFont = False
+        Transparent = True
+        Layout = tlCenter
+      end
+      object lLanguageOutputs: TLabel
+        Left = 887
+        Top = 2
+        Width = 44
+        Height = 21
+        Anchors = [akTop, akRight]
+        AutoSize = False
+        Caption = 'Sprache:'
+        FocusControl = seLanguageOutputs
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -11
+        Font.Name = 'Tahoma'
+        Font.Style = []
+        ParentFont = False
+        Transparent = True
+        Layout = tlCenter
+      end
       object seStepOutput: TJvSpinEdit
         Left = 53
-        Top = 3
+        Top = 30
         Width = 44
         Height = 21
         CheckMinValue = True
@@ -726,7 +794,7 @@ object MainForm: TMainForm
       end
       object eStepNameOutput: TEdit
         Left = 103
-        Top = 3
+        Top = 30
         Width = 878
         Height = 21
         Anchors = [akLeft, akTop, akRight]
@@ -736,9 +804,9 @@ object MainForm: TMainForm
       end
       object vstOutputs: TVirtualStringTree
         Left = 3
-        Top = 27
+        Top = 57
         Width = 978
-        Height = 465
+        Height = 459
         Anchors = [akLeft, akTop, akRight, akBottom]
         DefaultNodeHeight = 24
         Header.AutoSizeIndex = 0
@@ -775,7 +843,7 @@ object MainForm: TMainForm
       end
       object cMessage: TComboBox
         Left = 82
-        Top = 606
+        Top = 630
         Width = 899
         Height = 21
         Anchors = [akLeft, akRight, akBottom]
@@ -786,7 +854,7 @@ object MainForm: TMainForm
       end
       object seIntervall1On: TJvSpinEdit
         Left = 82
-        Top = 633
+        Top = 657
         Width = 58
         Height = 21
         CheckMinValue = True
@@ -797,7 +865,7 @@ object MainForm: TMainForm
       end
       object seIntervall1Off: TJvSpinEdit
         Left = 191
-        Top = 633
+        Top = 657
         Width = 58
         Height = 21
         CheckMinValue = True
@@ -808,7 +876,7 @@ object MainForm: TMainForm
       end
       object seIntervall2On: TJvSpinEdit
         Left = 382
-        Top = 633
+        Top = 657
         Width = 58
         Height = 21
         CheckMinValue = True
@@ -819,7 +887,7 @@ object MainForm: TMainForm
       end
       object seIntervall2Off: TJvSpinEdit
         Left = 491
-        Top = 633
+        Top = 657
         Width = 58
         Height = 21
         CheckMinValue = True
@@ -830,7 +898,7 @@ object MainForm: TMainForm
       end
       object vstAnalogOutputs: TVirtualStringTree
         Left = 3
-        Top = 498
+        Top = 522
         Width = 978
         Height = 102
         Anchors = [akLeft, akRight, akBottom]
@@ -871,6 +939,37 @@ object MainForm: TMainForm
             WideText = 'Einheit'
           end>
       end
+      object seBlockNumberOutputs: TJvSpinEdit
+        Left = 53
+        Top = 3
+        Width = 44
+        Height = 21
+        MinValue = 1.000000000000000000
+        Value = 1.000000000000000000
+        Enabled = False
+        TabOrder = 9
+        OnChange = seBlockNumberChange
+      end
+      object eBlockNameOutputs: TEdit
+        Left = 103
+        Top = 3
+        Width = 778
+        Height = 21
+        Anchors = [akLeft, akTop, akRight]
+        Enabled = False
+        TabOrder = 10
+        OnChange = eBlockNameInputsChange
+      end
+      object seLanguageOutputs: TJvSpinEdit
+        Left = 937
+        Top = 3
+        Width = 44
+        Height = 21
+        MinValue = 1.000000000000000000
+        Anchors = [akTop, akRight]
+        TabOrder = 11
+        OnChange = seLanguageChange
+      end
     end
     object tsCrosses: TTabSheet
       Caption = 'Kreuzchen'
@@ -878,12 +977,47 @@ object MainForm: TMainForm
       OnShow = tsCrossesShow
       DesignSize = (
         984
-        659)
-      object vstCrosses: TVirtualStringTree
+        683)
+      object lBlockCrosses: TLabel
         Left = 3
         Top = 3
+        Width = 44
+        Height = 21
+        AutoSize = False
+        Caption = 'Block:'
+        FocusControl = seBlockNumberCrosses
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -11
+        Font.Name = 'Tahoma'
+        Font.Style = []
+        ParentFont = False
+        Transparent = True
+        Layout = tlCenter
+      end
+      object lLanguageCrosses: TLabel
+        Left = 887
+        Top = 2
+        Width = 44
+        Height = 21
+        Anchors = [akTop, akRight]
+        AutoSize = False
+        Caption = 'Sprache:'
+        FocusControl = seLanguageCrosses
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -11
+        Font.Name = 'Tahoma'
+        Font.Style = []
+        ParentFont = False
+        Transparent = True
+        Layout = tlCenter
+      end
+      object vstCrosses: TVirtualStringTree
+        Left = 3
+        Top = 30
         Width = 978
-        Height = 567
+        Height = 564
         Anchors = [akLeft, akTop, akRight, akBottom]
         Header.AutoSizeIndex = -1
         Header.Font.Charset = DEFAULT_CHARSET
@@ -908,7 +1042,7 @@ object MainForm: TMainForm
       end
       object btPrintGrid: TButton
         Left = 3
-        Top = 576
+        Top = 600
         Width = 80
         Height = 80
         Anchors = [akLeft, akBottom]
@@ -925,7 +1059,7 @@ object MainForm: TMainForm
       end
       object btExportGrid: TButton
         Left = 89
-        Top = 576
+        Top = 600
         Width = 80
         Height = 80
         Hint = 'In Excel (.csv)'
@@ -945,7 +1079,7 @@ object MainForm: TMainForm
       end
       object gbCrossesLegend: TGroupBox
         Left = 175
-        Top = 576
+        Top = 600
         Width = 806
         Height = 80
         Anchors = [akLeft, akRight, akBottom]
@@ -975,6 +1109,37 @@ object MainForm: TMainForm
           Caption = 'Ausg'#228'nge: Leer = Inaktiv '
         end
       end
+      object seBlockNumberCrosses: TJvSpinEdit
+        Left = 53
+        Top = 3
+        Width = 44
+        Height = 21
+        MinValue = 1.000000000000000000
+        Enabled = False
+        TabOrder = 4
+        OnChange = seBlockNumberChange
+      end
+      object eBlockNameCrosses: TEdit
+        Left = 103
+        Top = 3
+        Width = 778
+        Height = 21
+        Anchors = [akLeft, akTop, akRight]
+        Enabled = False
+        TabOrder = 5
+        OnChange = eBlockNameInputsChange
+      end
+      object seLanguageCrosses: TJvSpinEdit
+        Left = 937
+        Top = 3
+        Width = 44
+        Height = 21
+        MinValue = 1.000000000000000000
+        Value = 1.000000000000000000
+        Anchors = [akTop, akRight]
+        TabOrder = 6
+        OnChange = seLanguageChange
+      end
     end
     object tsDiagram: TTabSheet
       Caption = 'Diagramm'
@@ -982,67 +1147,186 @@ object MainForm: TMainForm
       OnShow = tsDiagramShow
       DesignSize = (
         984
-        659)
-      object sbDiagram: TScrollBox
+        683)
+      object lBlockDiagram: TLabel
         Left = 3
         Top = 3
+        Width = 44
+        Height = 21
+        AutoSize = False
+        Caption = 'Block:'
+        FocusControl = seBlockNumberDiagram
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -11
+        Font.Name = 'Tahoma'
+        Font.Style = []
+        ParentFont = False
+        Transparent = True
+        Layout = tlCenter
+      end
+      object lLanguageDiagram: TLabel
+        Left = 887
+        Top = 2
+        Width = 44
+        Height = 21
+        Anchors = [akTop, akRight]
+        AutoSize = False
+        Caption = 'Sprache:'
+        FocusControl = seLanguageDiagram
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -11
+        Font.Name = 'Tahoma'
+        Font.Style = []
+        ParentFont = False
+        Transparent = True
+        Layout = tlCenter
+      end
+      object sbDiagram: TScrollBox
+        Left = 3
+        Top = 30
         Width = 978
-        Height = 653
+        Height = 650
         HorzScrollBar.Size = 10
         VertScrollBar.Increment = 40
         Anchors = [akLeft, akTop, akRight, akBottom]
         TabOrder = 0
         DesignSize = (
           957
-          649)
+          646)
         object iDiagram: TImage
           Left = 3
           Top = 3
-          Width = 762
+          Width = 657
           Height = 6033
           Anchors = [akLeft, akTop, akRight]
           AutoSize = True
           IncrementalDisplay = True
+          PopupMenu = pmDiagram
           ExplicitWidth = 695
         end
       end
+      object seBlockNumberDiagram: TJvSpinEdit
+        Left = 53
+        Top = 3
+        Width = 44
+        Height = 21
+        MinValue = 1.000000000000000000
+        Value = 1.000000000000000000
+        Enabled = False
+        TabOrder = 1
+        OnChange = seBlockNumberChange
+      end
+      object eBlockNameDiagram: TEdit
+        Left = 103
+        Top = 3
+        Width = 778
+        Height = 21
+        Anchors = [akLeft, akTop, akRight]
+        Enabled = False
+        TabOrder = 2
+        OnChange = eBlockNameInputsChange
+      end
+      object seLanguageDiagram: TJvSpinEdit
+        Left = 937
+        Top = 3
+        Width = 44
+        Height = 21
+        MinValue = 1.000000000000000000
+        Anchors = [akTop, akRight]
+        TabOrder = 3
+        OnChange = seLanguageChange
+      end
     end
-  end
-  object seBlockNumber: TJvSpinEdit
-    Left = 58
-    Top = 8
-    Width = 44
-    Height = 21
-    MinValue = 1.000000000000000000
-    Enabled = False
-    TabOrder = 0
-    OnChange = seBlockNumberChange
-  end
-  object seLanguage: TJvSpinEdit
-    Left = 956
-    Top = 8
-    Width = 44
-    Height = 21
-    MinValue = 1.000000000000000000
-    Value = 1.000000000000000000
-    Anchors = [akTop, akRight]
-    TabOrder = 2
-    OnChange = seLanguageChange
-  end
-  object eProgName: TEdit
-    Left = 108
-    Top = 8
-    Width = 792
-    Height = 21
-    Anchors = [akLeft, akTop, akRight]
-    Enabled = False
-    TabOrder = 1
-    OnChange = eProgNameChange
+    object tsProgram: TTabSheet
+      Caption = 'Programm'
+      ImageIndex = 5
+      DesignSize = (
+        984
+        683)
+      object lProgram: TLabel
+        Left = 3
+        Top = 3
+        Width = 62
+        Height = 21
+        AutoSize = False
+        Caption = 'Programm:'
+        FocusControl = seProgramNumber
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -11
+        Font.Name = 'Tahoma'
+        Font.Style = []
+        ParentFont = False
+        Transparent = True
+        Layout = tlCenter
+      end
+      object vstProgram: TVirtualStringTree
+        Left = 3
+        Top = 30
+        Width = 978
+        Height = 650
+        Anchors = [akLeft, akTop, akRight, akBottom]
+        DefaultNodeHeight = 24
+        Header.AutoSizeIndex = 1
+        Header.Font.Charset = DEFAULT_CHARSET
+        Header.Font.Color = clWindowText
+        Header.Font.Height = -11
+        Header.Font.Name = 'Tahoma'
+        Header.Font.Style = []
+        Header.Options = [hoAutoResize, hoColumnResize, hoDrag, hoVisible, hoAutoSpring]
+        TabOrder = 0
+        TreeOptions.MiscOptions = [toAcceptOLEDrop, toEditable, toFullRepaintOnResize, toGridExtensions, toInitOnSave, toToggleOnDblClick, toWheelPanning]
+        TreeOptions.PaintOptions = [toHideFocusRect, toShowButtons, toShowDropmark, toThemeAware, toUseBlendedImages, toUseBlendedSelection]
+        TreeOptions.SelectionOptions = [toExtendedFocus, toLevelSelectConstraint]
+        OnCreateEditor = vstProgramCreateEditor
+        OnEdited = vstProgramEdited
+        OnEditing = vstProgramEditing
+        OnFreeNode = vstProgramFreeNode
+        OnGetText = vstProgramGetText
+        OnKeyDown = vstProgramKeyDown
+        OnMouseUp = vstProgramMouseUp
+        Columns = <
+          item
+            Alignment = taCenter
+            Options = [coAllowClick, coDraggable, coEnabled, coParentBidiMode, coParentColor, coShowDropMark, coVisible, coFixed, coAllowFocus, coWrapCaption]
+            Position = 0
+            Width = 54
+            WideText = 'Schritt'
+          end
+          item
+            Position = 1
+            Width = 920
+            WideText = 'Block'
+          end>
+      end
+      object eProgName: TEdit
+        Left = 111
+        Top = 3
+        Width = 870
+        Height = 21
+        Anchors = [akLeft, akTop, akRight]
+        Enabled = False
+        TabOrder = 1
+        OnChange = eProgNameChange
+      end
+      object seProgramNumber: TJvSpinEdit
+        Left = 61
+        Top = 3
+        Width = 44
+        Height = 21
+        MinValue = 1.000000000000000000
+        Enabled = False
+        TabOrder = 2
+        OnChange = seProgramNumberChange
+      end
+    end
   end
   object taMain: TActionList
     Images = imlActions
-    Left = 88
-    Top = 96
+    Left = 80
+    Top = 192
     object acRight: TAction
       OnExecute = acRightExecute
     end
@@ -1053,12 +1337,12 @@ object MainForm: TMainForm
   object odBasicPicture: TOpenPictureDialog
     Options = [ofHideReadOnly, ofPathMustExist, ofFileMustExist, ofEnableSizing]
     Title = 'Bild ausw'#228'hlen'
-    Left = 120
-    Top = 96
+    Left = 112
+    Top = 192
   end
   object imlActions: TImageList
-    Left = 152
-    Top = 96
+    Left = 144
+    Top = 192
   end
   object odBasicCsv: TJvOpenDialog
     Filter = 'Exportdateien(*.csv)|*.csv'
@@ -1066,17 +1350,17 @@ object MainForm: TMainForm
     ActiveControl = acListView
     Height = 458
     Width = 571
-    Left = 184
-    Top = 96
+    Left = 176
+    Top = 192
   end
   object bffBasicSaveCsv: TJvBrowseForFolderDialog
     Options = [odOnlyDirectory, odFileSystemDirectoryOnly, odStatusAvailable, odEditBox, odNewDialogStyle]
-    Left = 216
-    Top = 96
+    Left = 208
+    Top = 192
   end
   object XPManifest1: TXPManifest
-    Left = 48
-    Top = 96
+    Left = 40
+    Top = 192
   end
   object odBasicXML: TJvOpenDialog
     Filter = 'XML Dateien(*.xml)|*.xml'
@@ -1084,12 +1368,12 @@ object MainForm: TMainForm
     ActiveControl = acListView
     Height = 458
     Width = 571
-    Left = 280
-    Top = 96
+    Left = 272
+    Top = 192
   end
   object mmMain: TMainMenu
-    Left = 312
-    Top = 96
+    Left = 304
+    Top = 192
     object meEdit: TMenuItem
       Caption = 'Bearbeiten'
       object meCopy: TMenuItem
@@ -1137,20 +1421,20 @@ object MainForm: TMainForm
     end
   end
   object PrintDialog1: TPrintDialog
-    Left = 344
-    Top = 96
+    Left = 336
+    Top = 192
   end
   object pmMessage: TPopupMenu
-    Left = 376
-    Top = 96
+    Left = 400
+    Top = 192
     object meEditMessages: TMenuItem
       Caption = 'Bearbeiten'
       OnClick = meEditMessagesClick
     end
   end
   object MadExceptionHandler1: TMadExceptionHandler
-    Left = 440
-    Top = 96
+    Left = 496
+    Top = 192
   end
   object sdCrossesExport: TFileSaveDialog
     DefaultExtension = '.csv'
@@ -1161,8 +1445,8 @@ object MainForm: TMainForm
         FileMask = '*.csv'
       end>
     Options = [fdoOverWritePrompt]
-    Left = 408
-    Top = 96
+    Left = 432
+    Top = 192
   end
   object sdBasicXML: TFileSaveDialog
     DefaultExtension = '.xml'
@@ -1173,7 +1457,27 @@ object MainForm: TMainForm
         FileMask = '*.xml'
       end>
     Options = [fdoOverWritePrompt]
-    Left = 248
-    Top = 96
+    Left = 240
+    Top = 192
+  end
+  object pmDiagram: TPopupMenu
+    Left = 368
+    Top = 192
+    object meSaveDiagram: TMenuItem
+      Caption = 'Speichern unter...'
+      OnClick = meSaveDiagramClick
+    end
+  end
+  object sdDiagramExport: TFileSaveDialog
+    DefaultExtension = '.png'
+    FavoriteLinks = <>
+    FileTypes = <
+      item
+        DisplayName = 'png Dateien (*.png)'
+        FileMask = '*.png'
+      end>
+    Options = [fdoOverWritePrompt]
+    Left = 464
+    Top = 192
   end
 end

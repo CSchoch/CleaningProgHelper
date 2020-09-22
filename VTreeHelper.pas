@@ -102,6 +102,13 @@ type
     property Instance : Integer read FInstance;
   end;
 
+  TProgramData = class(TObject)
+  public
+    Block : Integer;
+
+    constructor Create();
+  end;
+
 function VSTHAdd(AVST : TCustomVirtualStringTree; ARecord : TInputData; ANode : PVirtualNode = nil)
   : PVirtualNode; overload;
 function VSTHAdd(AVST : TCustomVirtualStringTree; ARecord : TAnalogInputData; ANode : PVirtualNode = nil)
@@ -113,6 +120,8 @@ function VSTHAdd(AVST : TCustomVirtualStringTree; ARecord : TAnalogOutputData; A
 function VSTHAdd(AVST : TCustomVirtualStringTree; ARecord : TCrossesData; ANode : PVirtualNode = nil)
   : PVirtualNode; overload;
 function VSTHAdd(AVST : TCustomVirtualStringTree; ARecord : TSelectLangData; ANode : PVirtualNode = nil)
+  : PVirtualNode; overload;
+function VSTHAdd(AVST : TCustomVirtualStringTree; ARecord : TProgramData; ANode : PVirtualNode = nil)
   : PVirtualNode; overload;
 
 // function VSTHChange(AVST : TVirtualStringTree; ARecord : TTreeData; Checked : boolean; ANode :
@@ -175,6 +184,13 @@ begin
 end;
 
 function VSTHAdd(AVST : TCustomVirtualStringTree; ARecord : TSelectLangData; ANode : PVirtualNode = nil)
+  : PVirtualNode; overload;
+begin
+  result := AVST.AddChild(ANode, ARecord);
+  AVST.ValidateNode(result, false);
+end;
+
+function VSTHAdd(AVST : TCustomVirtualStringTree; ARecord : TProgramData; ANode : PVirtualNode = nil)
   : PVirtualNode; overload;
 begin
   result := AVST.AddChild(ANode, ARecord);
@@ -322,11 +338,19 @@ end;
 
 constructor TCrossesData.Create(Settings : TSettings);
 begin
+inherited Create();
   SetLength(OutputMode, Settings.NumOfOutputs);
   SetLength(Input, Settings.NumOfInputs);
   SetLength(Intervall, Settings.NumOfIntervalls);
   SetLength(AnalogIn, Settings.NumOfAnalogIn);
   SetLength(AnalogOut, Settings.NumOfAnalogOut);
+end;
+
+{ TProgramData }
+
+constructor TProgramData.Create;
+begin
+   inherited Create();
 end;
 
 end.
